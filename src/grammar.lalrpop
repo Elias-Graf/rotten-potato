@@ -1,0 +1,435 @@
+use crate::ast::ParseError;
+use crate::ast::atom::Atom;
+use crate::ast::binary_operation::BinaryOperation;
+use crate::ast::binary_operation::BinaryOperator;
+use crate::ast::comparison_operation::ComparisonOperation;
+use crate::ast::comparison_operation::ComparisonOperator;
+use crate::ast::def_listen::DefListen;
+use crate::ast::def_listen::DefListenArg;
+use crate::ast::def_poll::DefPoll;
+use crate::ast::def_poll::DefPollArg;
+use crate::ast::def_var::DefVar;
+use crate::ast::def_widget::DefWidget;
+use crate::ast::def_widget::DefWidgetChild;
+use crate::ast::def_widget::DefWidgetParam;
+use crate::ast::def_window::DefWindow;
+use crate::ast::def_window::DefWindowContent;
+use crate::ast::def_window::DefWindowArg;
+use crate::ast::def_window::DefWindowArgValue;
+use crate::ast::literal::Literal;
+use crate::ast::literal::LiteralArg;
+use crate::ast::expr::PrimitiveExpr;
+use crate::ast::function_call::FunctionCall;
+use crate::ast::include::Include;
+use crate::ast::symbol::Symbol;
+use crate::ast::ternary_operation::TernaryOperation;
+use crate::ast::top_level_expr::TopLevelExpr;
+use crate::ast::unary_operation::UnaryOperation;
+use crate::ast::widget_call::WidgetCall;
+use crate::ast::widget_call::WidgetCallArg;
+use crate::ast::widget_call::WidgetCallChild;
+use crate::lexer::LexicalError;
+use crate::lexer::tok::Tok;
+
+grammar<'inp, 'err>(errors: &'err mut Vec<ParseError>);
+
+pub TopLevel: Vec<TopLevelExpr> = TopLevelExpr*;
+
+pub TopLevelExpr: TopLevelExpr = {
+    DefListen,
+    DefPoll,
+    DefVar,
+    DefWidget,
+    DefWindow,
+    Include,
+    Literal,
+}
+
+pub DefListen: TopLevelExpr = {
+    <l:@L> "(" "deflisten" ")" <r:@R> => {
+        errors.push(ParseError::ExpectedDefListenName {
+            err_span: (l, r).into(),
+        });
+        TopLevelExpr::Err
+    },
+    <l:@L> "(" "deflisten" Symbol ")" <r:@R> => {
+        errors.push(ParseError::ExpectedDefListenScript {
+            err_span: (l, r).into(),
+        });
+        TopLevelExpr::Err
+    },
+    "(" "deflisten" <name:Symbol> <args:DefListenArg*> <script:"literalString"> ")" => {
+        DefListen::new(name, args, script.to_owned()).into()
+    },
+};
+
+pub DefListenArg: DefListenArg =
+    ":" <name:Symbol> <value:Atom> => DefListenArg::new(name, value);
+
+pub DefPoll: TopLevelExpr = {
+    <left: @L> "(" "defpoll" ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefPollName {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    <left: @L> "(" "defpoll" Symbol ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefPollScript {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    "(" "defpoll" <name:Symbol> <args:DefPollArg*> <script:"literalString"> ")" => {
+        DefPoll::new(name, args, script.to_owned()).into()
+    },
+};
+
+pub DefPollArg: DefPollArg =
+    ":" <name:Symbol> <value:Atom> => DefPollArg::new(name, value);
+
+pub DefVar: TopLevelExpr = {
+    <left: @L> "(" "defvar" ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefVarName {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    <left: @L> "(" "defvar" Symbol ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefVarValue {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    "(" "defvar" <name:Symbol> <value:Atom> ")" => {
+        DefVar::new(name, value).into()
+    },
+};
+
+pub DefWidget: TopLevelExpr = {
+    <left: @L> "(" "defwidget" ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefWidgetName {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    <left: @L> "(" "defwidget" <name:Symbol> ")" <right: @R> => {
+        errors.push(ParseError::ExpectedDefWidgetParams {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    "(" "defwidget" <name:Symbol> "[" <params:DefWidgetParam*> "]" <children:DefWidgetChild*> ")" => {
+        DefWidget::new(name, params, children).into()
+    },
+};
+
+pub DefWidgetParam: DefWidgetParam = <o:"?"?> <n:Symbol> => DefWidgetParam::new(n, o.is_some());
+
+pub DefWidgetChild: DefWidgetChild = WidgetCall => <>.into();
+
+pub DefWindow: TopLevelExpr = {
+    <left: @L>
+    "("
+        "defwindow"
+        <args:DefWindowArgs>
+        <content:DefWindowContentList>
+    ")"
+    <right: @R>=> {
+        errors.push(ParseError::ExpectedDefWindowName {
+            err_span: (left, right).into(),
+        });
+        TopLevelExpr::Err
+    },
+    "("
+        "defwindow"
+        <name:Symbol>
+        <args:DefWindowArgs>
+        <content:DefWindowContentList>
+    ")" => DefWindow::new(name, args, content).into(),
+};
+
+pub DefWindowArgs: Vec<DefWindowArg> = <DefWindowArg*>;
+
+pub DefWindowArg: DefWindowArg =
+    ":" <name:Symbol> <value:DefWindowArgValue> => DefWindowArg::new(name, value);
+
+pub DefWindowArgValue: DefWindowArgValue = {
+    Atom => <>.into(),
+    WidgetCall => <>.into(),
+};
+
+pub DefWindowContentList: Vec<DefWindowContent> = <DefWindowContent*>;
+
+pub DefWindowContent: DefWindowContent = {
+    Atom => DefWindowContent::Atom(<>),
+    WidgetCall => DefWindowContent::WidgetCall(<>),
+};
+
+pub Include: TopLevelExpr = {
+    "(" "include" ")" => TopLevelExpr::Err,
+    "(" "include" <path:"literalString"> ")" => Include::new(path).into(),
+};
+
+pub Literal: TopLevelExpr = "(" "literal" <args:LiteralArg*> ")"
+    => Literal::new(args).into();
+
+pub LiteralArg: LiteralArg = {
+    ":" <name:Symbol> <value:"literalString"> => LiteralArg::new(name, value.to_owned()),
+    ":" <name:Symbol> <value:Symbol> => LiteralArg::new(name, value),
+};
+
+pub WidgetCall: WidgetCall = {
+    "("
+        <name:Symbol>
+        <args:WidgetCallArg*>
+        <children:WidgetCallChild*>
+    ")" => {
+        WidgetCall::new(
+            name,
+            args,
+            children,
+        )
+    },
+};
+
+pub WidgetCallArg: WidgetCallArg =
+    ":" <name:Symbol> <value:Atom> => WidgetCallArg::new(name, value);
+
+pub WidgetCallChild: WidgetCallChild = {
+    Atom => <>.into(),
+    WidgetCall => <>.into(),
+};
+
+pub TernaryOperation: PrimitiveExpr = {
+    BinaryOperation,
+    <ComparisonOperation> "?" <TernaryOperation> ":" <TernaryOperation> => {
+        TernaryOperation::new(<>).into()
+    },
+};
+
+pub BinaryOperation: PrimitiveExpr = {
+    #[precedence(level="0")]
+    ComparisonOperation,
+
+    #[precedence(level="1")] #[assoc(side="left")]
+    <l:BinaryOperation> "&&" <r:BinaryOperation> => BinaryOperation::new(
+        l,
+        BinaryOperator::And,
+        r
+    ).into(),
+    #[precedence(level="2")] #[assoc(side="left")]
+    <l:BinaryOperation> "||" <r:BinaryOperation> => BinaryOperation::new(
+        l,
+        BinaryOperator::Or,
+        r
+    ).into(),
+};
+
+pub ComparisonOperation: PrimitiveExpr = {
+    #[precedence(level="0")]
+    MathOperation,
+
+    #[precedence(level="1")] #[assoc(side="left")]
+    <l:ComparisonOperation> "!=" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Neq, r).into()
+    },
+    <l:ComparisonOperation> "<" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Lt, r).into()
+    },
+    <l:ComparisonOperation> "<=" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Lte, r).into()
+    },
+    <l:ComparisonOperation> "==" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Eq, r).into()
+    },
+    <l:ComparisonOperation> ">" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Gt, r).into()
+    },
+    <l:ComparisonOperation> ">=" <r:ComparisonOperation> => {
+        ComparisonOperation::new(l, ComparisonOperator::Gte, r).into()
+    },
+};
+
+pub MathOperation: PrimitiveExpr = {
+    #[precedence(level="0")]
+    UnaryOp,
+
+    #[precedence(level="1")] #[assoc(side="left")]
+    <l:MathOperation> "*" <r:MathOperation> =>
+        BinaryOperation::new(l, BinaryOperator::Mul, r).into(),
+    <l:MathOperation> "/" <r:MathOperation> =>
+        BinaryOperation::new(l, BinaryOperator::Div, r).into(),
+    <l:MathOperation> "%" <r:MathOperation> =>
+        BinaryOperation::new(l, BinaryOperator::Mod, r).into(),
+    #[precedence(level="2")] #[assoc(side="left")]
+    <l:MathOperation> "+" <r:MathOperation> =>
+        BinaryOperation::new(l, BinaryOperator::Add, r).into(),
+    <l:MathOperation> "-" <r:MathOperation> =>
+        BinaryOperation::new(l, BinaryOperator::Sub, r).into(),
+};
+
+// TODO: Rename to UnaryOperation
+pub UnaryOp: PrimitiveExpr = {
+    "!" <Atom> => UnaryOperation::new_not(<>).into(),
+    Atom => <>.into(),
+    FunctionCall,
+};
+
+pub Atom: Atom = {
+    "false" => false.into(),
+    "true" => true.into(),
+    // Symbol => <>.into(),
+    "literalNumber" => Atom::new_number(<>.to_owned()),
+    "literalString" => Atom::StrLit(<>.to_owned()),
+};
+
+pub FunctionCall: PrimitiveExpr =
+    <Symbol> "(" <CommaSeparated<TernaryOperation>> ")" => FunctionCall::new(<>).into();
+
+pub Symbol: Symbol = "literalSymbol" => Symbol::new(<>);
+
+CommaSeparated<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};
+
+extern {
+    type Location = usize;
+    type Error = LexicalError<'inp>;
+
+    enum Tok<'inp> {
+        "literalNumber" => Tok::LiteralNumber(<&'inp str>),
+        "literalString" => Tok::LiteralString(<&'inp str>),
+        "literalSymbol" => Tok::LiteralSymbol(<&'inp str>),
+        "include" => Tok::KeywordInclude,
+        "literal" => Tok::KeywordLiteral,
+        "deflisten" => Tok::KeywordDefListen,
+        "defpoll" => Tok::KeywordDefPoll,
+        "defvar" => Tok::KeywordDefVar,
+        "defwidget" => Tok::KeywordDefWidget,
+        "defwindow" => Tok::KeywordDefWindow,
+        "false" => Tok::KeywordFalse,
+        "true" => Tok::KeywordTrue,
+        "(" => Tok::DelimiterLeftParen,
+        ")" => Tok::DelimiterRightParen,
+        "[" => Tok::DelimiterLeftBracket,
+        "]" => Tok::DelimiterRightBracket,
+        "," => Tok::DelimiterComma,
+        "*" => Tok::OperatorMathMultiplication,
+        "/" => Tok::OperatorMathDivision,
+        "%" => Tok::OperatorMathModulo,
+        "+" => Tok::OperatorMathAddition,
+        "-" => Tok::OperatorMathSubtraction,
+        "||" => Tok::OperatorLogicalOr,
+        "&&" => Tok::OperatorLogicalAnd,
+        "!" => Tok::OperatorLogicalNot,
+        "==" => Tok::OperatorComparisonEqual,
+        "!=" => Tok::OperatorComparisonNotEqual,
+        "<=" => Tok::OperatorComparisonLessThanOrEquals,
+        ">=" => Tok::OperatorComparisonGreaterThanOrEquals,
+        ">" => Tok::OperatorComparisonGreaterThan,
+        "<" => Tok::OperatorComparisonLessThan,
+        "?" => Tok::PunctuationQuestionMark,
+        ":" => Tok::PunctuationColon,
+    }
+}
+
+
+// pub Program = <Statement*>;
+//
+// Statement: ast::Stmt = {
+//     " " <StackOp>,
+//     "\t" " " <MathOp>,
+//     "\t" "\t" <HeapOp>,
+//     "\n" <FlowCtrl>,
+//     "\t" "\n" <Io>,
+// };
+//
+// StackOp: ast::Stmt = {
+//     " " <Number> => ast::Stmt::Push(<>),
+//     "\n" " " => ast::Stmt::Dup,
+//     "\t" " " <Number> => ast::Stmt::Copy(<>),
+//     "\n" "\t" => ast::Stmt::Swap,
+//     "\n" "\n" => ast::Stmt::Discard,
+//     "\t" "\n" <Number> => ast::Stmt::Slide(<>),
+// };
+//
+// MathOp: ast::Stmt = {
+//     " " " " => ast::Stmt::Add,
+//     " " "\t" => ast::Stmt::Sub,
+//     " " "\n" => ast::Stmt::Mul,
+//     "\t" " " => ast::Stmt::Div,
+//     "\t" "\t" => ast::Stmt::Mod,
+// };
+//
+// HeapOp: ast::Stmt = {
+//     " " => ast::Stmt::Store,
+//     "\t" => ast::Stmt::Load,
+// };
+//
+// FlowCtrl: ast::Stmt = {
+//     " " " " <Label> => ast::Stmt::Mark(<>),
+//     " " "\t" <Label> => ast::Stmt::Call(<>),
+//     " " "\n" <Label> => ast::Stmt::Jump(<>),
+//     "\t" " " <Label> => ast::Stmt::Jz(<>),
+//     "\t" "\t" <Label> => ast::Stmt::Js(<>),
+//     "\t" "\n" => ast::Stmt::Return,
+//     "\n" "\n" => ast::Stmt::Exit,
+// };
+//
+// Io: ast::Stmt = {
+//     " " " " => ast::Stmt::PrintChar,
+//     " " "\t" => ast::Stmt::PrintNum,
+//     "\t" " " => ast::Stmt::ReadChar,
+//     "\t" "\t" => ast::Stmt::ReadNum,
+// };
+//
+// Number: ast::Int = {
+//     "\n" => 0,
+//     " " <Digit*> "\n" => ast::number(false, <>),
+//     "\t" <Digit*> "\n" => ast::number(true, <>),
+// };
+//
+// Label: String = {
+//     <Digit*> "\n" => ast::label(<>),
+// };
+
+// vim: ft=rust
+// use lalrpop_util::ErrorRecovery;
+//
+// use crate::lexer::tok::Tok;
+// use crate::lexer::LexerError;
+// use crate::ast::include::Include;
+// use crate::ast::top_level_expr::TopLevelExpr;
+//
+// // grammar<'inp, 'err>(errors: &'err mut Vec<ErrorRecovery<usize, Tok<'inp>, &'inp str>>);
+// grammar<'inp, 'err>(errors: &'err mut Vec<ErrorRecovery<usize, Tok<'inp>, &'inp str>>);
+//
+// // pub Program: () = {
+// //     "!" => (),
+// // };
+//
+// pub Include: u8 = {
+//     ! => 1,
+//     // "(" "include" ")" => TopLevelExpr::Err,
+//     // "(" "include" <path:"literalString"> ")" => Include::new(path).into(),
+// };
+//
+// extern {
+//     type Location = usize;
+//     type Error = LexerError;
+//
+//     enum Tok<'inp> {
+//         // "literalString" => Tok::LitStr(<&'inp str>),
+//         "include" => Tok::KeywordInclude,
+//         "(" => Tok::DelimiterLeftParen,
+//         ")" => Tok::DelimiterRightParen,
+//     }
+// }
+//
+// // vim: ft=rust

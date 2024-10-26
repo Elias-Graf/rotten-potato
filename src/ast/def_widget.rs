@@ -1,4 +1,4 @@
-use super::{atom::Symbol, widget_call::WidgetCall};
+use super::{symbol::Symbol, widget_call::WidgetCall};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefWidget {

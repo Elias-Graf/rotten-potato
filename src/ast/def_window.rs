@@ -1,7 +1,4 @@
-use super::{
-    atom::{Atom, Symbol},
-    widget_call::WidgetCall,
-};
+use super::{atom::Atom, symbol::Symbol, widget_call::WidgetCall};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefWindow {

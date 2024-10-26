@@ -1,4 +1,5 @@
-use super::atom::{Atom, Symbol};
+use super::atom::Atom;
+use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefVar {

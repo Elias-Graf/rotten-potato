@@ -1,4 +1,4 @@
-use super::atom::{Atom, Symbol};
+use super::{atom::Atom, symbol::Symbol};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefListen {

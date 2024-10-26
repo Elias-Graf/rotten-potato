@@ -1,4 +1,4 @@
-use super::{atom::Symbol, expr::PrimitiveExpr};
+use super::{expr::PrimitiveExpr, symbol::Symbol};
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct FunctionCall {

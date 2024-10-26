@@ -1,3 +1,5 @@
+use super::symbol::Symbol;
+
 // TODO: Adjust naming, e.g.: "LiteralNumber", "LiteralString", etc.
 // TODO: Use &'inp str instead of String
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -31,7 +33,3 @@ impl From<Symbol> for Atom {
         Self::Symbol(value)
     }
 }
-
-// TODO: remove
-#[deprecated]
-pub use super::symbol::Symbol;

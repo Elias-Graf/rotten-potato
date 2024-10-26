@@ -1,5 +1,4 @@
-use super::atom::Atom;
-use super::atom::Symbol;
+use super::{atom::Atom, symbol::Symbol};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct WidgetCall {

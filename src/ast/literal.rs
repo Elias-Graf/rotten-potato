@@ -1,4 +1,4 @@
-use super::atom::Symbol;
+use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Literal {
@@ -50,13 +50,9 @@ impl From<Symbol> for LiteralArgValue {
 mod tests {
     use pretty_assertions::assert_eq;
 
+    use super::*;
     use crate::{
-        ast::{
-            atom::Symbol,
-            literal::{Literal, LiteralArg},
-            top_level_expr::TopLevelExpr,
-            ParseError,
-        },
+        ast::{top_level_expr::TopLevelExpr, ParseError},
         lexer::{Lexer, LexicalError},
     };
 

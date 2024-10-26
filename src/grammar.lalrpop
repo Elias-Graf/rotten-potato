@@ -42,7 +42,7 @@ pub TopLevelExpr: TopLevelExpr = {
     DefVar => <>.1,
     DefWidget => <>.1,
     DefWindow => <>.1,
-    Include,
+    Include => <>.1,
     Literal,
 }
 
@@ -160,9 +160,15 @@ pub DefWindowContent: DefWindowContent = {
     WidgetCall => DefWindowContent::WidgetCall(<>),
 };
 
-pub Include: TopLevelExpr = {
-    "(" "include" ")" => TopLevelExpr::Err,
-    "(" "include" <path:"literalString"> ")" => Include::new(path).into(),
+pub Include: Spanned<TopLevelExpr> = {
+    <l:@L> "(" "include" <path:"literalString"?> ")" <r:@R> => {
+        let Some(path) = path else {
+            errors.push(ParseError::ExpectedIncludePath { err_span: (l, r).into() });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+
+        (l, Include::new(path).into(), r).into()
+    }
 };
 
 pub Literal: TopLevelExpr = "(" "literal" <args:LiteralArg*> ")"

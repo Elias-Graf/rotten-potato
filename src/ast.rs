@@ -67,4 +67,9 @@ pub enum ParseError {
         #[label("try providing a name here")]
         err_span: SourceSpan,
     },
+    #[error("expected a path")]
+    ExpectedIncludePath {
+        #[label("try providing a path here")]
+        err_span: SourceSpan,
+    },
 }

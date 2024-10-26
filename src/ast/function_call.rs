@@ -36,7 +36,7 @@ mod tests {
             Ok((
                 0,
                 FunctionCall::new(Symbol::new("strlength"), vec!["value".into()]).into(),
-                0
+                18
             )
                 .into())
         );
@@ -60,7 +60,7 @@ mod tests {
                     ]
                 )
                 .into(),
-                0
+                23
             )
                 .into())
         );
@@ -80,7 +80,7 @@ mod tests {
                     vec![FunctionCall::new(Symbol::new("trim"), vec!["foo".into()]).into()]
                 )
                 .into(),
-                0
+                22
             )
                 .into())
         );

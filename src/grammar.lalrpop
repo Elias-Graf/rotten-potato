@@ -254,7 +254,7 @@ pub MathOperation: Spanned<PrimitiveExpr> = {
 pub UnaryOperation: Spanned<PrimitiveExpr> = {
     "!" <Atom> => (0, UnaryOperation::new_not(<>).into(), 0).into(),
     <l:@L> <a:Atom> <r:@R> => (l, a.into(), r).into(),
-    FunctionCall => (0, <>, 0).into(),
+    FunctionCall,
 };
 
 pub Atom: Atom = {
@@ -265,8 +265,9 @@ pub Atom: Atom = {
     "literalString" => Atom::StrLit(<>.to_owned()),
 };
 
-pub FunctionCall: PrimitiveExpr =
-    <Symbol> "(" <CommaSeparated<TernaryOperation>> ")" => FunctionCall::new(<>).into();
+pub FunctionCall: Spanned<PrimitiveExpr> =
+    <l:@L> <name:Symbol> "(" <args:CommaSeparated<TernaryOperation>> ")" <r:@R> =>
+        (l, FunctionCall::new(name, args).into(), r).into();
 
 pub Symbol: Symbol = "literalSymbol" => Symbol::new(<>);
 

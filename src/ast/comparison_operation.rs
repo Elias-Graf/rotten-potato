@@ -182,7 +182,7 @@ mod tests {
                     (
                         0,
                         FunctionCall::new("strlength", vec![Atom::from("foo").into()]).into(),
-                        0
+                        16
                     ),
                     ComparisonOperator::Gt,
                     (19, Atom::new_number("5").into(), 20)

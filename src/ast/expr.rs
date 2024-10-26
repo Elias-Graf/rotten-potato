@@ -4,7 +4,6 @@ use super::{
     unary_operation::UnaryOperation,
 };
 
-// TODO: Rename to "Expression"
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum PrimitiveExpr {
     Atom(Atom),
@@ -14,8 +13,6 @@ pub enum PrimitiveExpr {
     Symbol(Symbol),
     TernaryOperation(TernaryOperation),
     UnaryOperation(UnaryOperation),
-    // TODO: Evaluate if necessary.
-    Err,
 }
 
 impl From<bool> for PrimitiveExpr {

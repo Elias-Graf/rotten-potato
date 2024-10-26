@@ -61,7 +61,7 @@ mod tests {
                             vec![FunctionCall::new("trim", vec!["hello".into()]).into()]
                         )
                         .into(),
-                        0
+                        24
                     ),
                     ComparisonOperator::Gt,
                     (27, Atom::new_number("0").into(), 28),

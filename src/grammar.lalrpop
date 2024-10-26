@@ -34,16 +34,16 @@ use crate::spanned::Spanned;
 
 grammar<'inp, 'err>(errors: &'err mut Vec<ParseError>);
 
-pub TopLevel: Vec<TopLevelExpr> = TopLevelExpr*;
+pub TopLevel: Vec<Spanned<TopLevelExpr>> = TopLevelExpr*;
 
-pub TopLevelExpr: TopLevelExpr = {
-    DefListen => <>.1,
-    DefPoll => <>.1,
-    DefVar => <>.1,
-    DefWidget => <>.1,
-    DefWindow => <>.1,
-    Include => <>.1,
-    Literal => <>.1,
+pub TopLevelExpr: Spanned<TopLevelExpr> = {
+    DefListen,
+    DefPoll,
+    DefVar,
+    DefWidget,
+    DefWindow,
+    Include,
+    Literal,
 }
 
 pub DefListen: Spanned<TopLevelExpr> = {

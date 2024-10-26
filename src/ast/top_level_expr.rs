@@ -104,54 +104,89 @@ mod tests {
         assert_eq!(
             ast,
             Ok(vec![
-                Include::new("listeners.yuck").into(),
-                DefVar::new("foo", Atom::from("bar")).into(),
-                DefPoll::new(
-                    "volume",
-                    vec![DefPollArg::new("interval", Atom::from("1s"))],
-                    "scripts/getvol".to_owned()
+                (13, Include::new("listeners.yuck").into(), 39).into(),
+                (53, DefVar::new("foo", Atom::from("bar")).into(), 71).into(),
+                (
+                    84,
+                    DefPoll::new(
+                        "volume",
+                        vec![DefPollArg::new("interval", Atom::from("1s"))],
+                        "scripts/getvol".to_owned()
+                    )
+                    .into(),
+                    132
                 )
-                .into(),
-                DefListen::new(
-                    "music",
-                    vec![DefListenArg::new("initial", Atom::from(""))],
-                    "playerctl --follow metadata --format '{{ artist }} - {{ title }}' || true"
-                        .to_owned()
+                    .into(),
+                (
+                    145,
+                    DefListen::new(
+                        "music",
+                        vec![DefListenArg::new("initial", Atom::from(""))],
+                        "playerctl --follow metadata --format '{{ artist }} - {{ title }}' || true"
+                            .to_owned()
+                    )
+                    .into(),
+                    264
                 )
-                .into(),
-                DefWidget::new(
-                    "bar",
-                    Vec::<DefWidgetParam>::new(),
-                    Vec::<DefWidgetChild>::new()
+                    .into(),
+                (
+                    277,
+                    DefWidget::new(
+                        "bar",
+                        Vec::<DefWidgetParam>::new(),
+                        Vec::<DefWidgetChild>::new()
+                    )
+                    .into(),
+                    295
                 )
-                .into(),
-                DefWidget::new(
-                    "sidestuff",
-                    Vec::<DefWidgetParam>::new(),
-                    Vec::<DefWidgetChild>::new()
+                    .into(),
+                (
+                    308,
+                    DefWidget::new(
+                        "sidestuff",
+                        Vec::<DefWidgetParam>::new(),
+                        Vec::<DefWidgetChild>::new()
+                    )
+                    .into(),
+                    332
                 )
-                .into(),
-                DefWidget::new(
-                    "metric",
-                    vec![
-                        DefWidgetParam::new("label", false),
-                        DefWidgetParam::new("value", false),
-                        DefWidgetParam::new("onchange", false)
-                    ],
-                    Vec::<DefWidgetChild>::new()
+                    .into(),
+                (
+                    345,
+                    DefWidget::new(
+                        "metric",
+                        vec![
+                            DefWidgetParam::new("label", false),
+                            DefWidgetParam::new("value", false),
+                            DefWidgetParam::new("onchange", false)
+                        ],
+                        Vec::<DefWidgetChild>::new()
+                    )
+                    .into(),
+                    386
                 )
-                .into(),
-                DefWindow::new(
-                    "bar",
-                    Vec::<DefWindowArg>::new(),
-                    Vec::<DefWindowContent>::new()
+                    .into(),
+                (
+                    399,
+                    DefWindow::new(
+                        "bar",
+                        Vec::<DefWindowArg>::new(),
+                        Vec::<DefWindowContent>::new()
+                    )
+                    .into(),
+                    414
                 )
-                .into(),
-                Literal::new(vec![LiteralArg::new(
-                    "content",
-                    "(button 'click')".to_owned()
-                )])
-                .into(),
+                    .into(),
+                (
+                    427,
+                    Literal::new(vec![LiteralArg::new(
+                        "content",
+                        "(button 'click')".to_owned()
+                    )])
+                    .into(),
+                    464
+                )
+                    .into(),
             ])
         );
     }

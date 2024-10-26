@@ -1,3 +1,5 @@
+use crate::spanned::Spanned;
+
 use super::expr::PrimitiveExpr;
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -14,16 +16,16 @@ pub enum BinaryOperator {
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct BinaryOperation {
-    pub lhs: Box<PrimitiveExpr>,
+    pub lhs: Box<Spanned<PrimitiveExpr>>,
     pub op: BinaryOperator,
-    pub rhs: Box<PrimitiveExpr>,
+    pub rhs: Box<Spanned<PrimitiveExpr>>,
 }
 
 impl BinaryOperation {
     pub fn new(
-        lhs: impl Into<PrimitiveExpr>,
+        lhs: impl Into<Spanned<PrimitiveExpr>>,
         op: BinaryOperator,
-        rhs: impl Into<PrimitiveExpr>,
+        rhs: impl Into<Spanned<PrimitiveExpr>>,
     ) -> Self {
         Self {
             lhs: Box::new(lhs.into()),
@@ -53,7 +55,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(false, BinaryOperator::Or, true).into())
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, false.into(), 5),
+                        BinaryOperator::Or,
+                        (9, true.into(), 13)
+                    )
+                    .into(),
+                    13
+                )
+                    .into())
             );
         }
 
@@ -63,7 +75,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(true, BinaryOperator::And, false).into())
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, true.into(), 4),
+                        BinaryOperator::And,
+                        (8, false.into(), 13)
+                    )
+                    .into(),
+                    13
+                )
+                    .into())
             );
         }
 
@@ -73,12 +95,26 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    false,
-                    BinaryOperator::Or,
-                    BinaryOperation::new(true, BinaryOperator::And, UnaryOperation::new_not(false))
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, false.into(), 5),
+                        BinaryOperator::Or,
+                        (
+                            9,
+                            BinaryOperation::new(
+                                (9, true.into(), 13),
+                                BinaryOperator::And,
+                                (0, UnaryOperation::new_not(false).into(), 0),
+                            )
+                            .into(),
+                            23
+                        )
+                    )
+                    .into(),
+                    23
                 )
-                .into())
+                    .into())
             );
         }
     }
@@ -95,12 +131,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    Atom::new_number("10"),
-                    BinaryOperator::Add,
-                    Atom::new_number("10")
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, Atom::new_number("10").into(), 2),
+                        BinaryOperator::Add,
+                        (5, Atom::new_number("10").into(), 7),
+                    )
+                    .into(),
+                    7
                 )
-                .into())
+                    .into())
             );
         }
 
@@ -110,12 +151,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    Atom::new_number("42"),
-                    BinaryOperator::Sub,
-                    Atom::new_number("5")
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, Atom::new_number("42").into(), 2),
+                        BinaryOperator::Sub,
+                        (5, Atom::new_number("5").into(), 6),
+                    )
+                    .into(),
+                    6
                 )
-                .into())
+                    .into())
             );
         }
 
@@ -125,12 +171,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    Atom::new_number("9"),
-                    BinaryOperator::Div,
-                    Atom::new_number("9")
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, Atom::new_number("9").into(), 1),
+                        BinaryOperator::Div,
+                        (4, Atom::new_number("9").into(), 5),
+                    )
+                    .into(),
+                    5
                 )
-                .into())
+                    .into())
             );
         }
 
@@ -140,12 +191,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    Atom::new_number("2"),
-                    BinaryOperator::Mul,
-                    Atom::new_number("6")
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, Atom::new_number("2").into(), 1),
+                        BinaryOperator::Mul,
+                        (4, Atom::new_number("6").into(), 5),
+                    )
+                    .into(),
+                    5
                 )
-                .into())
+                    .into())
             );
         }
 
@@ -155,12 +211,17 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
-                    Atom::new_number("10"),
-                    BinaryOperator::Mod,
-                    Atom::new_number("5")
+                Ok((
+                    0,
+                    BinaryOperation::new(
+                        (0, Atom::new_number("10").into(), 2),
+                        BinaryOperator::Mod,
+                        (5, Atom::new_number("5").into(), 6),
+                    )
+                    .into(),
+                    6
                 )
-                .into())
+                    .into())
             );
         }
 
@@ -170,31 +231,56 @@ mod tests {
 
             assert_eq!(
                 ast,
-                Ok(BinaryOperation::new(
+                Ok((
+                    0,
                     BinaryOperation::new(
-                        Atom::new_number("5"),
-                        BinaryOperator::Add,
-                        BinaryOperation::new(
-                            Atom::new_number("10"),
-                            BinaryOperator::Mul,
-                            Atom::new_number("10"),
+                        (
+                            0,
+                            BinaryOperation::new(
+                                (0, Atom::new_number("5").into(), 1),
+                                BinaryOperator::Add,
+                                (
+                                    4,
+                                    BinaryOperation::new(
+                                        (4, Atom::new_number("10").into(), 6),
+                                        BinaryOperator::Mul,
+                                        (9, Atom::new_number("10").into(), 11),
+                                    )
+                                    .into(),
+                                    11
+                                ),
+                            )
+                            .into(),
+                            11
                         ),
-                    ),
-                    BinaryOperator::Sub,
-                    BinaryOperation::new(
-                        Atom::new_number("5"),
-                        BinaryOperator::Div,
-                        Atom::new_number("2"),
-                    ),
+                        BinaryOperator::Sub,
+                        (
+                            14,
+                            BinaryOperation::new(
+                                (14, Atom::new_number("5").into(), 15),
+                                BinaryOperator::Div,
+                                (18, Atom::new_number("2").into(), 19),
+                            )
+                            .into(),
+                            19
+                        ),
+                    )
+                    .into(),
+                    19
                 )
-                .into())
+                    .into())
             );
         }
     }
 
     // TODO: Add global parenthesis support
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<PrimitiveExpr, LexicalError>) {
+    fn test(
+        inp: &str,
+    ) -> (
+        Vec<ParseError>,
+        Result<Spanned<PrimitiveExpr>, LexicalError>,
+    ) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

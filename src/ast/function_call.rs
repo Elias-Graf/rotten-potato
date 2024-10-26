@@ -23,6 +23,7 @@ mod tests {
     use crate::{
         ast::{atom::Atom, ParseError},
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
@@ -32,7 +33,12 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(FunctionCall::new(Symbol::new("strlength"), vec!["value".into()]).into())
+            Ok((
+                0,
+                FunctionCall::new(Symbol::new("strlength"), vec!["value".into()]).into(),
+                0
+            )
+                .into())
         );
     }
 
@@ -43,15 +49,20 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(FunctionCall::new(
-                Symbol::new("substring"),
-                vec![
-                    "yuck".into(),
-                    Atom::new_number("1").into(),
-                    Atom::new_number("3").into()
-                ]
+            Ok((
+                0,
+                FunctionCall::new(
+                    Symbol::new("substring"),
+                    vec![
+                        "yuck".into(),
+                        Atom::new_number("1").into(),
+                        Atom::new_number("3").into()
+                    ]
+                )
+                .into(),
+                0
             )
-            .into())
+                .into())
         );
     }
 
@@ -62,15 +73,25 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(FunctionCall::new(
-                Symbol::new("strlength"),
-                vec![FunctionCall::new(Symbol::new("trim"), vec!["foo".into()]).into()]
+            Ok((
+                0,
+                FunctionCall::new(
+                    Symbol::new("strlength"),
+                    vec![FunctionCall::new(Symbol::new("trim"), vec!["foo".into()]).into()]
+                )
+                .into(),
+                0
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<PrimitiveExpr, LexicalError>) {
+    fn test(
+        inp: &str,
+    ) -> (
+        Vec<ParseError>,
+        Result<Spanned<PrimitiveExpr>, LexicalError>,
+    ) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

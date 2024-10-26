@@ -202,28 +202,22 @@ pub WidgetCallChild: WidgetCallChild = {
 };
 
 pub TernaryOperation: PrimitiveExpr = {
-    BinaryOperation,
+    BinaryOperation => <>.1,
     <cmp:ComparisonOperation> "?" <lhs:TernaryOperation> ":" <rhs:TernaryOperation> => {
         TernaryOperation::new(cmp.1, lhs, rhs).into()
     },
 };
 
-pub BinaryOperation: PrimitiveExpr = {
+pub BinaryOperation: Spanned<PrimitiveExpr> = {
     #[precedence(level="0")]
-    ComparisonOperation => <>.1,
+    ComparisonOperation,
 
     #[precedence(level="1")] #[assoc(side="left")]
-    <l:BinaryOperation> "&&" <r:BinaryOperation> => BinaryOperation::new(
-        l,
-        BinaryOperator::And,
-        r
-    ).into(),
+    <l:@L> <lhs:BinaryOperation> "&&" <rhs:BinaryOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::And, rhs).into(), r).into(),
     #[precedence(level="2")] #[assoc(side="left")]
-    <l:BinaryOperation> "||" <r:BinaryOperation> => BinaryOperation::new(
-        l,
-        BinaryOperator::Or,
-        r
-    ).into(),
+    <l:@L> <lhs:BinaryOperation> "||" <rhs:BinaryOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Or, rhs).into(), r).into(),
 };
 
 pub ComparisonOperation: Spanned<PrimitiveExpr> = {
@@ -250,17 +244,17 @@ pub MathOperation: Spanned<PrimitiveExpr> = {
     UnaryOperation,
 
     #[precedence(level="1")] #[assoc(side="left")]
-    <l:MathOperation> "*" <r:MathOperation> =>
-        (0, BinaryOperation::new(l.1, BinaryOperator::Mul, r.1).into(), 0).into(),
-    <l:MathOperation> "/" <r:MathOperation> =>
-        (0, BinaryOperation::new(l.1, BinaryOperator::Div, r.1).into(), 0).into(),
-    <l:MathOperation> "%" <r:MathOperation> =>
-        (0, BinaryOperation::new(l.1, BinaryOperator::Mod, r.1).into(), 0).into(),
+    <l:@L> <lhs:MathOperation> "*" <rhs:MathOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Mul, rhs).into(), r).into(),
+    <l:@L> <lhs:MathOperation> "/" <rhs:MathOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Div, rhs).into(), r).into(),
+    <l:@L> <lhs:MathOperation> "%" <rhs:MathOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Mod, rhs).into(), r).into(),
     #[precedence(level="2")] #[assoc(side="left")]
-    <l:MathOperation> "+" <r:MathOperation> =>
-        (0, BinaryOperation::new(l.1, BinaryOperator::Add, r.1).into(), 0).into(),
-    <l:MathOperation> "-" <r:MathOperation> =>
-        (0, BinaryOperation::new(l.1, BinaryOperator::Sub, r.1).into(), 0).into(),
+    <l:@L> <lhs:MathOperation> "+" <rhs:MathOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Add, rhs).into(), r).into(),
+    <l:@L> <lhs:MathOperation> "-" <rhs:MathOperation> <r:@R> =>
+        (l, BinaryOperation::new(lhs, BinaryOperator::Sub, rhs).into(), r).into(),
 };
 
 pub UnaryOperation: Spanned<PrimitiveExpr> = {

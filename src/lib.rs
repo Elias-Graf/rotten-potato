@@ -5,12 +5,13 @@ use lexer::LexicalError;
 pub mod ast;
 pub mod lexer;
 
-lalrpop_mod!(pub grammar);
+lalrpop_mod!(
+    #[allow(clippy::all)]
+    pub grammar
+);
 
 /// Parses (a list of) top level expressions, for example a complete file.
-pub fn parse_top_level<'inp>(
-    inp: &'inp str,
-) -> Result<(Vec<TopLevelExpr>, Vec<ParseError>), LexicalError<'inp>> {
+pub fn parse_top_level(inp: &str) -> Result<(Vec<TopLevelExpr>, Vec<ParseError>), LexicalError> {
     let lexer = lexer::Lexer::new(inp);
     let parser = grammar::TopLevelParser::new();
     let mut errs = Vec::new();

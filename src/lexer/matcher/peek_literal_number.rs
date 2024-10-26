@@ -45,7 +45,7 @@ fn grapheme_is_digit(grapheme: &Grapheme<'_>) -> bool {
         return char.is_ascii_digit();
     }
 
-    return false;
+    false
 }
 
 #[cfg(test)]

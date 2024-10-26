@@ -62,10 +62,10 @@ impl<'inp> Iterator for Lexer<'inp> {
             self.curr_idx += consumed_whitespaces;
         }
 
-        const MATCHERS: &[(
-            &'static str,
-            for<'inp> fn(&[Grapheme<'inp>], usize, &'inp str) -> Option<matcher::PeekResult<'inp>>,
-        )] = &[
+        type MatcherFn =
+            for<'inp> fn(&[Grapheme<'inp>], usize, &'inp str) -> Option<matcher::PeekResult<'inp>>;
+
+        const MATCHERS: &[(&str, MatcherFn)] = &[
             ("keyword", matcher::peek_keyword),
             ("delimiter", matcher::peek_delimiter),
             ("punctuation", matcher::peek_punctuation),
@@ -137,9 +137,9 @@ impl<'inp> Lexer<'inp> {
 
 pub type LexerResult<'inp> = Result<(usize, Tok<'inp>, usize), LexicalError<'inp>>;
 
-impl<'inp> Into<LexerResult<'inp>> for matcher::PeekedToken<'inp> {
-    fn into(self) -> LexerResult<'inp> {
-        Ok((self.span_from, self.tok, self.span_to))
+impl<'inp> From<matcher::PeekedToken<'inp>> for LexerResult<'inp> {
+    fn from(value: matcher::PeekedToken<'inp>) -> Self {
+        Ok((value.span_from, value.tok, value.span_to))
     }
 }
 

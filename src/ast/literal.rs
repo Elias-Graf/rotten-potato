@@ -54,6 +54,7 @@ mod tests {
     use crate::{
         ast::{top_level_expr::TopLevelExpr, ParseError},
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
@@ -63,11 +64,16 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(Literal::new(vec![LiteralArg::new(
-                "content",
-                "(button 'foo')".to_owned()
-            )])
-            .into())
+            Ok((
+                0,
+                Literal::new(vec![LiteralArg::new(
+                    "content",
+                    "(button 'foo')".to_owned()
+                )])
+                .into(),
+                35
+            )
+                .into())
         );
     }
 
@@ -78,15 +84,20 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(Literal::new(vec![LiteralArg::new(
-                "content",
-                Symbol::new("variable_containing_yuck")
-            )])
-            .into())
+            Ok((
+                0,
+                Literal::new(vec![LiteralArg::new(
+                    "content",
+                    Symbol::new("variable_containing_yuck")
+                )])
+                .into(),
+                43
+            )
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

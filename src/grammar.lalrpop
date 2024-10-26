@@ -43,7 +43,7 @@ pub TopLevelExpr: TopLevelExpr = {
     DefWidget => <>.1,
     DefWindow => <>.1,
     Include => <>.1,
-    Literal,
+    Literal => <>.1,
 }
 
 pub DefListen: Spanned<TopLevelExpr> = {
@@ -171,8 +171,8 @@ pub Include: Spanned<TopLevelExpr> = {
     }
 };
 
-pub Literal: TopLevelExpr = "(" "literal" <args:LiteralArg*> ")"
-    => Literal::new(args).into();
+pub Literal: Spanned<TopLevelExpr> = <l:@L> "(" "literal" <args:LiteralArg*> ")" <r:@R>
+    => (l, Literal::new(args).into(), r).into();
 
 pub LiteralArg: LiteralArg = {
     ":" <name:Symbol> <value:"literalString"> => LiteralArg::new(name, value.to_owned()),

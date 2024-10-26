@@ -40,7 +40,7 @@ pub TopLevelExpr: TopLevelExpr = {
     DefListen => <>.1,
     DefPoll => <>.1,
     DefVar => <>.1,
-    DefWidget,
+    DefWidget => <>.1,
     DefWindow,
     Include,
     Literal,
@@ -105,21 +105,18 @@ pub DefVar: Spanned<TopLevelExpr> = {
     },
 };
 
-pub DefWidget: TopLevelExpr = {
-    <left: @L> "(" "defwidget" ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefWidgetName {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
+pub DefWidget: Spanned<TopLevelExpr> = {
+    <l:@L> "(" "defwidget" <name:Symbol?> ")" <r:@R> => {
+        let Some(name) = name else {
+            errors.push(ParseError::ExpectedDefWidgetName { err_span: (l, r).into() });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+
+        errors.push(ParseError::ExpectedDefWidgetParams { err_span: (l, r).into() });
+        (l, TopLevelExpr::Err, r).into()
     },
-    <left: @L> "(" "defwidget" <name:Symbol> ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefWidgetParams {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
-    },
-    "(" "defwidget" <name:Symbol> "[" <params:DefWidgetParam*> "]" <children:DefWidgetChild*> ")" => {
-        DefWidget::new(name, params, children).into()
+    <l:@L> "(" "defwidget" <name:Symbol> "[" <params:DefWidgetParam*> "]" <children:DefWidgetChild*> ")" <r:@R> => {
+        (l, DefWidget::new(name, params, children).into(), r).into()
     },
 };
 

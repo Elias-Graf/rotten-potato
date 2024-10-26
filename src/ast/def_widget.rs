@@ -60,6 +60,7 @@ mod tests {
             ParseError,
         },
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
@@ -68,7 +69,7 @@ mod tests {
         // r#"(defwidget [])"#
         let (errs, ast) = test(r#"(defwidget)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 11).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefWidgetName {
@@ -81,7 +82,7 @@ mod tests {
     fn missing_params() {
         let (errs, ast) = test(r#"(defwidget bar)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 15).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefWidgetParams {
@@ -97,12 +98,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWidget::new(
-                "bar",
-                vec![DefWidgetParam::new("name", false)],
-                Vec::<DefWidgetChild>::new()
+            Ok((
+                0,
+                DefWidget::new(
+                    "bar",
+                    vec![DefWidgetParam::new("name", false)],
+                    Vec::<DefWidgetChild>::new()
+                )
+                .into(),
+                22
             )
-            .into())
+                .into())
         );
     }
 
@@ -113,12 +119,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWidget::new(
-                "bar",
-                vec![DefWidgetParam::new("name", true)],
-                Vec::<DefWidgetChild>::new()
+            Ok((
+                0,
+                DefWidget::new(
+                    "bar",
+                    vec![DefWidgetParam::new("name", true)],
+                    Vec::<DefWidgetChild>::new()
+                )
+                .into(),
+                23
             )
-            .into())
+                .into())
         );
     }
 
@@ -129,67 +140,76 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWidget::new(
-                "bar",
-                vec![
-                    DefWidgetParam::new("foo", false),
-                    DefWidgetParam::new("name", true),
-                    DefWidgetParam::new("bar", false),
-                ],
-                Vec::<DefWidgetChild>::new()
+            Ok((
+                0,
+                DefWidget::new(
+                    "bar",
+                    vec![
+                        DefWidgetParam::new("foo", false),
+                        DefWidgetParam::new("name", true),
+                        DefWidgetParam::new("bar", false),
+                    ],
+                    Vec::<DefWidgetChild>::new()
+                )
+                .into(),
+                31
             )
-            .into())
+                .into())
         );
     }
 
     #[test]
     fn children() {
         let (errs, ast) = test(
-            r#"
-            (defwidget bottombar [width]
-              (centerbox :orientation "h"
-                (box :halign "start" :orientation "h" :space-evenly false)
-                (box :halign "end" :orientation "h" :space-evenly false)
-              )
+            r#"(defwidget bottombar [width]
+                (centerbox :orientation "h"
+                    (box :halign "start" :orientation "h" :space-evenly false)
+                    (box :halign "end" :orientation "h" :space-evenly false)
+                )
             )"#,
         );
 
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWidget::new(
-                "bottombar",
-                vec![DefWidgetParam::new("width", false)],
-                vec![WidgetCall::new(
-                    "centerbox",
-                    vec![WidgetCallArg::new("orientation", Atom::from("h"))],
-                    vec![
-                        WidgetCall::new(
-                            "box",
-                            vec![
-                                WidgetCallArg::new("halign", Atom::from("start")),
-                                WidgetCallArg::new("orientation", Atom::from("h")),
-                                WidgetCallArg::new("space-evenly", Atom::from(false))
-                            ],
-                            Vec::<WidgetCallChild>::new(),
-                        ),
-                        WidgetCall::new(
-                            "box",
-                            vec![
-                                WidgetCallArg::new("halign", Atom::from("end")),
-                                WidgetCallArg::new("orientation", Atom::from("h")),
-                                WidgetCallArg::new("space-evenly", Atom::from(false))
-                            ],
-                            Vec::<WidgetCallChild>::new(),
-                        )
-                    ]
-                )],
+            Ok((
+                0,
+                DefWidget::new(
+                    "bottombar",
+                    vec![DefWidgetParam::new("width", false)],
+                    vec![WidgetCall::new(
+                        "centerbox",
+                        vec![WidgetCallArg::new("orientation", Atom::from("h"))],
+                        vec![
+                            WidgetCall::new(
+                                "box",
+                                vec![
+                                    WidgetCallArg::new("halign", Atom::from("start")),
+                                    WidgetCallArg::new("orientation", Atom::from("h")),
+                                    WidgetCallArg::new("space-evenly", Atom::from(false))
+                                ],
+                                Vec::<WidgetCallChild>::new(),
+                            ),
+                            WidgetCall::new(
+                                "box",
+                                vec![
+                                    WidgetCallArg::new("halign", Atom::from("end")),
+                                    WidgetCallArg::new("orientation", Atom::from("h")),
+                                    WidgetCallArg::new("space-evenly", Atom::from(false))
+                                ],
+                                Vec::<WidgetCallChild>::new(),
+                            )
+                        ]
+                    )],
+                )
+                .into(),
+                260
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

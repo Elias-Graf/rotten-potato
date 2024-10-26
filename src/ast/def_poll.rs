@@ -56,13 +56,14 @@ mod tests {
             ParseError,
         },
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
     pub fn missing_name() {
         let (errs, ast) = test(r#"(defpoll)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 9).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefPollName {
@@ -75,7 +76,7 @@ mod tests {
     pub fn missing_script() {
         let (errs, ast) = test(r#"(defpoll time)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 14).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefPollScript {
@@ -92,28 +93,32 @@ mod tests {
         // `\``, `"`, `'`. Check specification.
 
         let (errs, ast) = test(
-            r#"
-            (defpoll time :interval "1s"
-              :initial "initial-value"
-              "date +%H:%M:%S")"#,
+            r#"(defpoll time :interval "1s"
+                :initial "initial-value"
+                "date +%H:%M:%S")"#,
         );
 
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefPoll::new(
-                "time",
-                vec![
-                    DefPollArg::new("interval", Atom::from("1s")),
-                    DefPollArg::new("initial", Atom::from("initial-value"))
-                ],
-                "date +%H:%M:%S".to_owned(),
+            Ok((
+                0,
+                DefPoll::new(
+                    "time",
+                    vec![
+                        DefPollArg::new("interval", Atom::from("1s")),
+                        DefPollArg::new("initial", Atom::from("initial-value"))
+                    ],
+                    "date +%H:%M:%S".to_owned(),
+                )
+                .into(),
+                103
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

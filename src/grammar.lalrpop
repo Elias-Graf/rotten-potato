@@ -38,7 +38,7 @@ pub TopLevel: Vec<TopLevelExpr> = TopLevelExpr*;
 
 pub TopLevelExpr: TopLevelExpr = {
     DefListen => <>.1,
-    DefPoll,
+    DefPoll => <>.1,
     DefVar,
     DefWidget,
     DefWindow,
@@ -64,21 +64,22 @@ pub DefListen: Spanned<TopLevelExpr> = {
 pub DefListenArg: DefListenArg =
     ":" <name:Symbol> <value:Atom> => DefListenArg::new(name, value);
 
-pub DefPoll: TopLevelExpr = {
-    <left: @L> "(" "defpoll" ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefPollName {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
-    },
-    <left: @L> "(" "defpoll" Symbol ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefPollScript {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
-    },
-    "(" "defpoll" <name:Symbol> <args:DefPollArg*> <script:"literalString"> ")" => {
-        DefPoll::new(name, args, script.to_owned()).into()
+pub DefPoll: Spanned<TopLevelExpr> = {
+    <l:@L> "(" "defpoll" <name:Symbol?> <args:DefPollArg*> <script:"literalString"?> ")" <r:@R> => {
+        let Some(name) = name else {
+            errors.push(ParseError::ExpectedDefPollName {
+                err_span: (l, r).into(),
+            });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+        let Some(script) = script else {
+            errors.push(ParseError::ExpectedDefPollScript {
+                err_span: (l, r).into(),
+            });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+
+        (l, DefPoll::new(name, args, script.to_owned()).into(), r).into()
     },
 };
 

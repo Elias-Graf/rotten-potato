@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+derivative = "2.2.0"
 lalrpop-util = { version = "0.22.0", features = ["lexer", "unicode"] }
 log = "0.4.22"
 miette = { version = "7.0.0" }

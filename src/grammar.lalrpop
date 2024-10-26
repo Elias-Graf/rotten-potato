@@ -13,14 +13,14 @@ use crate::ast::def_widget::DefWidget;
 use crate::ast::def_widget::DefWidgetChild;
 use crate::ast::def_widget::DefWidgetParam;
 use crate::ast::def_window::DefWindow;
-use crate::ast::def_window::DefWindowContent;
 use crate::ast::def_window::DefWindowArg;
 use crate::ast::def_window::DefWindowArgValue;
-use crate::ast::literal::Literal;
-use crate::ast::literal::LiteralArg;
+use crate::ast::def_window::DefWindowContent;
 use crate::ast::expr::PrimitiveExpr;
 use crate::ast::function_call::FunctionCall;
 use crate::ast::include::Include;
+use crate::ast::literal::Literal;
+use crate::ast::literal::LiteralArg;
 use crate::ast::symbol::Symbol;
 use crate::ast::ternary_operation::TernaryOperation;
 use crate::ast::top_level_expr::TopLevelExpr;
@@ -30,6 +30,7 @@ use crate::ast::widget_call::WidgetCallArg;
 use crate::ast::widget_call::WidgetCallChild;
 use crate::lexer::LexicalError;
 use crate::lexer::tok::Tok;
+use crate::spanned::Spanned;
 
 grammar<'inp, 'err>(errors: &'err mut Vec<ParseError>);
 
@@ -202,14 +203,14 @@ pub WidgetCallChild: WidgetCallChild = {
 
 pub TernaryOperation: PrimitiveExpr = {
     BinaryOperation,
-    <ComparisonOperation> "?" <TernaryOperation> ":" <TernaryOperation> => {
-        TernaryOperation::new(<>).into()
+    <cmp:ComparisonOperation> "?" <lhs:TernaryOperation> ":" <rhs:TernaryOperation> => {
+        TernaryOperation::new(cmp.1, lhs, rhs).into()
     },
 };
 
 pub BinaryOperation: PrimitiveExpr = {
     #[precedence(level="0")]
-    ComparisonOperation,
+    ComparisonOperation => <>.1,
 
     #[precedence(level="1")] #[assoc(side="left")]
     <l:BinaryOperation> "&&" <r:BinaryOperation> => BinaryOperation::new(
@@ -225,54 +226,47 @@ pub BinaryOperation: PrimitiveExpr = {
     ).into(),
 };
 
-pub ComparisonOperation: PrimitiveExpr = {
+pub ComparisonOperation: Spanned<PrimitiveExpr> = {
     #[precedence(level="0")]
     MathOperation,
 
     #[precedence(level="1")] #[assoc(side="left")]
-    <l:ComparisonOperation> "!=" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Neq, r).into()
-    },
-    <l:ComparisonOperation> "<" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Lt, r).into()
-    },
-    <l:ComparisonOperation> "<=" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Lte, r).into()
-    },
-    <l:ComparisonOperation> "==" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Eq, r).into()
-    },
-    <l:ComparisonOperation> ">" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Gt, r).into()
-    },
-    <l:ComparisonOperation> ">=" <r:ComparisonOperation> => {
-        ComparisonOperation::new(l, ComparisonOperator::Gte, r).into()
-    },
+    <l:@L> <lhs:ComparisonOperation> "!=" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Neq, rhs).into(), r).into(),
+    <l:@L> <lhs:ComparisonOperation> "<" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Lt, rhs).into(), r).into(),
+    <l:@L> <lhs:ComparisonOperation> "<=" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Lte, rhs).into(), r).into(),
+    <l:@L> <lhs:ComparisonOperation> "==" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Eq, rhs).into(), r).into(),
+    <l:@L> <lhs:ComparisonOperation> ">" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Gt, rhs).into(), r).into(),
+    <l:@L> <lhs:ComparisonOperation> ">=" <rhs:ComparisonOperation> <r:@R> =>
+        (l, ComparisonOperation::new(lhs, ComparisonOperator::Gte, rhs).into(), r).into(),
 };
 
-pub MathOperation: PrimitiveExpr = {
+pub MathOperation: Spanned<PrimitiveExpr> = {
     #[precedence(level="0")]
-    UnaryOp,
+    UnaryOperation,
 
     #[precedence(level="1")] #[assoc(side="left")]
     <l:MathOperation> "*" <r:MathOperation> =>
-        BinaryOperation::new(l, BinaryOperator::Mul, r).into(),
+        (0, BinaryOperation::new(l.1, BinaryOperator::Mul, r.1).into(), 0).into(),
     <l:MathOperation> "/" <r:MathOperation> =>
-        BinaryOperation::new(l, BinaryOperator::Div, r).into(),
+        (0, BinaryOperation::new(l.1, BinaryOperator::Div, r.1).into(), 0).into(),
     <l:MathOperation> "%" <r:MathOperation> =>
-        BinaryOperation::new(l, BinaryOperator::Mod, r).into(),
+        (0, BinaryOperation::new(l.1, BinaryOperator::Mod, r.1).into(), 0).into(),
     #[precedence(level="2")] #[assoc(side="left")]
     <l:MathOperation> "+" <r:MathOperation> =>
-        BinaryOperation::new(l, BinaryOperator::Add, r).into(),
+        (0, BinaryOperation::new(l.1, BinaryOperator::Add, r.1).into(), 0).into(),
     <l:MathOperation> "-" <r:MathOperation> =>
-        BinaryOperation::new(l, BinaryOperator::Sub, r).into(),
+        (0, BinaryOperation::new(l.1, BinaryOperator::Sub, r.1).into(), 0).into(),
 };
 
-// TODO: Rename to UnaryOperation
-pub UnaryOp: PrimitiveExpr = {
-    "!" <Atom> => UnaryOperation::new_not(<>).into(),
-    Atom => <>.into(),
-    FunctionCall,
+pub UnaryOperation: Spanned<PrimitiveExpr> = {
+    "!" <Atom> => (0, UnaryOperation::new_not(<>).into(), 0).into(),
+    <l:@L> <a:Atom> <r:@R> => (l, a.into(), r).into(),
+    FunctionCall => (0, <>, 0).into(),
 };
 
 pub Atom: Atom = {
@@ -339,97 +333,4 @@ extern {
     }
 }
 
-
-// pub Program = <Statement*>;
-//
-// Statement: ast::Stmt = {
-//     " " <StackOp>,
-//     "\t" " " <MathOp>,
-//     "\t" "\t" <HeapOp>,
-//     "\n" <FlowCtrl>,
-//     "\t" "\n" <Io>,
-// };
-//
-// StackOp: ast::Stmt = {
-//     " " <Number> => ast::Stmt::Push(<>),
-//     "\n" " " => ast::Stmt::Dup,
-//     "\t" " " <Number> => ast::Stmt::Copy(<>),
-//     "\n" "\t" => ast::Stmt::Swap,
-//     "\n" "\n" => ast::Stmt::Discard,
-//     "\t" "\n" <Number> => ast::Stmt::Slide(<>),
-// };
-//
-// MathOp: ast::Stmt = {
-//     " " " " => ast::Stmt::Add,
-//     " " "\t" => ast::Stmt::Sub,
-//     " " "\n" => ast::Stmt::Mul,
-//     "\t" " " => ast::Stmt::Div,
-//     "\t" "\t" => ast::Stmt::Mod,
-// };
-//
-// HeapOp: ast::Stmt = {
-//     " " => ast::Stmt::Store,
-//     "\t" => ast::Stmt::Load,
-// };
-//
-// FlowCtrl: ast::Stmt = {
-//     " " " " <Label> => ast::Stmt::Mark(<>),
-//     " " "\t" <Label> => ast::Stmt::Call(<>),
-//     " " "\n" <Label> => ast::Stmt::Jump(<>),
-//     "\t" " " <Label> => ast::Stmt::Jz(<>),
-//     "\t" "\t" <Label> => ast::Stmt::Js(<>),
-//     "\t" "\n" => ast::Stmt::Return,
-//     "\n" "\n" => ast::Stmt::Exit,
-// };
-//
-// Io: ast::Stmt = {
-//     " " " " => ast::Stmt::PrintChar,
-//     " " "\t" => ast::Stmt::PrintNum,
-//     "\t" " " => ast::Stmt::ReadChar,
-//     "\t" "\t" => ast::Stmt::ReadNum,
-// };
-//
-// Number: ast::Int = {
-//     "\n" => 0,
-//     " " <Digit*> "\n" => ast::number(false, <>),
-//     "\t" <Digit*> "\n" => ast::number(true, <>),
-// };
-//
-// Label: String = {
-//     <Digit*> "\n" => ast::label(<>),
-// };
-
 // vim: ft=rust
-// use lalrpop_util::ErrorRecovery;
-//
-// use crate::lexer::tok::Tok;
-// use crate::lexer::LexerError;
-// use crate::ast::include::Include;
-// use crate::ast::top_level_expr::TopLevelExpr;
-//
-// // grammar<'inp, 'err>(errors: &'err mut Vec<ErrorRecovery<usize, Tok<'inp>, &'inp str>>);
-// grammar<'inp, 'err>(errors: &'err mut Vec<ErrorRecovery<usize, Tok<'inp>, &'inp str>>);
-//
-// // pub Program: () = {
-// //     "!" => (),
-// // };
-//
-// pub Include: u8 = {
-//     ! => 1,
-//     // "(" "include" ")" => TopLevelExpr::Err,
-//     // "(" "include" <path:"literalString"> ")" => Include::new(path).into(),
-// };
-//
-// extern {
-//     type Location = usize;
-//     type Error = LexerError;
-//
-//     enum Tok<'inp> {
-//         // "literalString" => Tok::LitStr(<&'inp str>),
-//         "include" => Tok::KeywordInclude,
-//         "(" => Tok::DelimiterLeftParen,
-//         ")" => Tok::DelimiterRightParen,
-//     }
-// }
-//
-// // vim: ft=rust

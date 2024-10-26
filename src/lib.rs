@@ -4,6 +4,7 @@ use lexer::LexicalError;
 
 pub mod ast;
 pub mod lexer;
+pub mod spanned;
 
 lalrpop_mod!(
     #[allow(clippy::all)]

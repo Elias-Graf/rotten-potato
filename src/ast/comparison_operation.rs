@@ -1,3 +1,5 @@
+use crate::spanned::Spanned;
+
 use super::expr::PrimitiveExpr;
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -12,16 +14,16 @@ pub enum ComparisonOperator {
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct ComparisonOperation {
-    lhs: Box<PrimitiveExpr>,
+    lhs: Box<Spanned<PrimitiveExpr>>,
     op: ComparisonOperator,
-    rhs: Box<PrimitiveExpr>,
+    rhs: Box<Spanned<PrimitiveExpr>>,
 }
 
 impl ComparisonOperation {
     pub fn new(
-        lhs: impl Into<PrimitiveExpr>,
+        lhs: impl Into<Spanned<PrimitiveExpr>>,
         op: ComparisonOperator,
-        rhs: impl Into<PrimitiveExpr>,
+        rhs: impl Into<Spanned<PrimitiveExpr>>,
     ) -> Self {
         Self {
             lhs: Box::new(lhs.into()),
@@ -48,12 +50,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("5"),
-                ComparisonOperator::Eq,
-                Atom::new_number("5")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("5").into(), 1),
+                    ComparisonOperator::Eq,
+                    (5, Atom::new_number("5").into(), 6),
+                )
+                .into(),
+                6
             )
-            .into())
+                .into())
         );
     }
 
@@ -64,12 +71,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("4"),
-                ComparisonOperator::Neq,
-                Atom::new_number("2")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("4").into(), 1),
+                    ComparisonOperator::Neq,
+                    (5, Atom::new_number("2").into(), 6),
+                )
+                .into(),
+                6
             )
-            .into())
+                .into())
         );
     }
 
@@ -80,12 +92,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("25"),
-                ComparisonOperator::Gt,
-                Atom::new_number("99")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("25").into(), 2),
+                    ComparisonOperator::Gt,
+                    (5, Atom::new_number("99").into(), 7),
+                )
+                .into(),
+                7
             )
-            .into())
+                .into())
         );
     }
 
@@ -96,12 +113,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("333"),
-                ComparisonOperator::Lt,
-                Atom::new_number("21")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("333").into(), 3),
+                    ComparisonOperator::Lt,
+                    (6, Atom::new_number("21").into(), 8),
+                )
+                .into(),
+                8
             )
-            .into())
+                .into())
         );
     }
 
@@ -112,12 +134,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("8"),
-                ComparisonOperator::Gte,
-                Atom::new_number("10")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("8").into(), 1),
+                    ComparisonOperator::Gte,
+                    (5, Atom::new_number("10").into(), 7)
+                )
+                .into(),
+                7
             )
-            .into())
+                .into())
         );
     }
 
@@ -128,12 +155,17 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                Atom::new_number("1"),
-                ComparisonOperator::Lte,
-                Atom::new_number("66")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (0, Atom::new_number("1").into(), 1),
+                    ComparisonOperator::Lte,
+                    (5, Atom::new_number("66").into(), 7)
+                )
+                .into(),
+                7
             )
-            .into())
+                .into())
         );
     }
 
@@ -144,20 +176,34 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(ComparisonOperation::new(
-                FunctionCall::new("strlength", vec![Atom::from("foo").into()]),
-                ComparisonOperator::Gt,
-                Atom::new_number("5")
+            Ok((
+                0,
+                ComparisonOperation::new(
+                    (
+                        0,
+                        FunctionCall::new("strlength", vec![Atom::from("foo").into()]).into(),
+                        0
+                    ),
+                    ComparisonOperator::Gt,
+                    (19, Atom::new_number("5").into(), 20)
+                )
+                .into(),
+                20
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<PrimitiveExpr, LexicalError>) {
+    fn test(
+        inp: &str,
+    ) -> (
+        Vec<ParseError>,
+        Result<Spanned<PrimitiveExpr>, LexicalError>,
+    ) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);
-        let parser = crate::grammar::BinaryOperationParser::new();
+        let parser = crate::grammar::ComparisonOperationParser::new();
 
         let mut errors = Vec::new();
 

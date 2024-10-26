@@ -54,12 +54,17 @@ mod tests {
             ast,
             Ok(TernaryOperation::new(
                 ComparisonOperation::new(
-                    FunctionCall::new(
-                        "strlength",
-                        vec![FunctionCall::new("trim", vec!["hello".into()]).into()]
+                    (
+                        0,
+                        FunctionCall::new(
+                            "strlength",
+                            vec![FunctionCall::new("trim", vec!["hello".into()]).into()]
+                        )
+                        .into(),
+                        0
                     ),
                     ComparisonOperator::Gt,
-                    Atom::new_number("0"),
+                    (27, Atom::new_number("0").into(), 28),
                 ),
                 "content",
                 "no content"
@@ -69,9 +74,7 @@ mod tests {
     }
 
     fn test(inp: &str) -> (Vec<ParseError>, Result<PrimitiveExpr, LexicalError>) {
-        // Initialization fails if called multiple times, we don't care about that in a testing
-        // setting.
-        let _ = env_logger::try_init();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);
         let parser = crate::grammar::TernaryOperationParser::new();

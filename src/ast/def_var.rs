@@ -34,13 +34,14 @@ mod tests {
     use crate::{
         ast::{atom::Atom, def_var::DefVar, top_level_expr::TopLevelExpr, ParseError},
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
     fn missing_name() {
         let (errs, ast) = test(r#"(defvar)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 8).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefVarName {
@@ -53,7 +54,7 @@ mod tests {
     fn missing_value() {
         let (errs, ast) = test(r#"(defvar foo)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 12).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefVarValue {
@@ -67,10 +68,13 @@ mod tests {
         let (errs, ast) = test(r#"(defvar foo "some value")"#);
 
         assert_eq!(errs, Vec::<ParseError>::new(),);
-        assert_eq!(ast, Ok(DefVar::new("foo", Atom::from("some value")).into()));
+        assert_eq!(
+            ast,
+            Ok((0, DefVar::new("foo", Atom::from("some value")).into(), 25).into())
+        );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

@@ -39,7 +39,7 @@ pub TopLevel: Vec<TopLevelExpr> = TopLevelExpr*;
 pub TopLevelExpr: TopLevelExpr = {
     DefListen => <>.1,
     DefPoll => <>.1,
-    DefVar,
+    DefVar => <>.1,
     DefWidget,
     DefWindow,
     Include,
@@ -86,21 +86,22 @@ pub DefPoll: Spanned<TopLevelExpr> = {
 pub DefPollArg: DefPollArg =
     ":" <name:Symbol> <value:Atom> => DefPollArg::new(name, value);
 
-pub DefVar: TopLevelExpr = {
-    <left: @L> "(" "defvar" ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefVarName {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
-    },
-    <left: @L> "(" "defvar" Symbol ")" <right: @R> => {
-        errors.push(ParseError::ExpectedDefVarValue {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
-    },
-    "(" "defvar" <name:Symbol> <value:Atom> ")" => {
-        DefVar::new(name, value).into()
+pub DefVar: Spanned<TopLevelExpr> = {
+    <l:@L> "(" "defvar" <name:Symbol?> <value:Atom?> ")" <r:@R> => {
+        let Some(name) = name else {
+            errors.push(ParseError::ExpectedDefVarName {
+                err_span: (l, r).into(),
+            });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+        let Some(value) = value else {
+            errors.push(ParseError::ExpectedDefVarValue {
+                err_span: (l, r).into(),
+            });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+
+        (l, DefVar::new(name, value).into(), r).into()
     },
 };
 

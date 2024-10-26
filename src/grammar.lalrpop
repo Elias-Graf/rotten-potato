@@ -37,7 +37,7 @@ grammar<'inp, 'err>(errors: &'err mut Vec<ParseError>);
 pub TopLevel: Vec<TopLevelExpr> = TopLevelExpr*;
 
 pub TopLevelExpr: TopLevelExpr = {
-    DefListen,
+    DefListen => <>.1,
     DefPoll,
     DefVar,
     DefWidget,
@@ -46,21 +46,18 @@ pub TopLevelExpr: TopLevelExpr = {
     Literal,
 }
 
-pub DefListen: TopLevelExpr = {
-    <l:@L> "(" "deflisten" ")" <r:@R> => {
-        errors.push(ParseError::ExpectedDefListenName {
-            err_span: (l, r).into(),
-        });
-        TopLevelExpr::Err
-    },
-    <l:@L> "(" "deflisten" Symbol ")" <r:@R> => {
-        errors.push(ParseError::ExpectedDefListenScript {
-            err_span: (l, r).into(),
-        });
-        TopLevelExpr::Err
-    },
-    "(" "deflisten" <name:Symbol> <args:DefListenArg*> <script:"literalString"> ")" => {
-        DefListen::new(name, args, script.to_owned()).into()
+pub DefListen: Spanned<TopLevelExpr> = {
+    <l:@L> "(" "deflisten" <name:Symbol?> <args:DefListenArg*> <script:"literalString"?> ")" <r:@R> => {
+        let Some(name) = name else {
+            errors.push(ParseError::ExpectedDefListenName { err_span: (l, r).into() });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+        let Some(script) = script else {
+            errors.push(ParseError::ExpectedDefListenScript { err_span: (l, r).into() });
+            return (l, TopLevelExpr::Err, r).into();
+        };
+
+        (l, DefListen::new(name, args, script.to_owned()).into(), r).into()
     },
 };
 

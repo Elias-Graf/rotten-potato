@@ -59,13 +59,14 @@ mod tests {
             ParseError,
         },
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
     fn missing_name() {
         let (errs, ast) = test(r#"(deflisten)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 11).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefListenName {
@@ -78,7 +79,7 @@ mod tests {
     fn missing_script() {
         let (errs, ast) = test(r#"(deflisten foo)"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 15).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefListenScript {
@@ -90,24 +91,28 @@ mod tests {
     #[test]
     fn name_and_args() {
         let (errs, ast) = test(
-            r#"
-            (deflisten foo :initial "whatever"
-              "tail -F /tmp/some_file")"#,
+            r#"(deflisten foo :initial "whatever"
+                "tail -F /tmp/some_file")"#,
         );
 
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefListen::new(
-                "foo",
-                vec![DefListenArg::new("initial", Atom::from("whatever"))],
-                "tail -F /tmp/some_file".to_owned()
+            Ok((
+                0,
+                DefListen::new(
+                    "foo",
+                    vec![DefListenArg::new("initial", Atom::from("whatever"))],
+                    "tail -F /tmp/some_file".to_owned()
+                )
+                .into(),
+                76
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

@@ -41,7 +41,7 @@ pub TopLevelExpr: TopLevelExpr = {
     DefPoll => <>.1,
     DefVar => <>.1,
     DefWidget => <>.1,
-    DefWindow,
+    DefWindow => <>.1,
     Include,
     Literal,
 }
@@ -124,25 +124,23 @@ pub DefWidgetParam: DefWidgetParam = <o:"?"?> <n:Symbol> => DefWidgetParam::new(
 
 pub DefWidgetChild: DefWidgetChild = WidgetCall => <>.into();
 
-pub DefWindow: TopLevelExpr = {
-    <left: @L>
+pub DefWindow: Spanned<TopLevelExpr> = {
+    <l:@L>
     "("
         "defwindow"
         <args:DefWindowArgs>
         <content:DefWindowContentList>
     ")"
-    <right: @R>=> {
-        errors.push(ParseError::ExpectedDefWindowName {
-            err_span: (left, right).into(),
-        });
-        TopLevelExpr::Err
+    <r:@R> => {
+        errors.push(ParseError::ExpectedDefWindowName { err_span: (l, r).into() });
+        (l, TopLevelExpr::Err, r).into()
     },
-    "("
+    <l:@L> "("
         "defwindow"
         <name:Symbol>
         <args:DefWindowArgs>
         <content:DefWindowContentList>
-    ")" => DefWindow::new(name, args, content).into(),
+    ")" <r:@R> => (l, DefWindow::new(name, args, content).into(), r).into(),
 };
 
 pub DefWindowArgs: Vec<DefWindowArg> = <DefWindowArg*>;

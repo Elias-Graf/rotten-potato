@@ -82,12 +82,13 @@ mod tests {
     use crate::ast::widget_call::{WidgetCallArg, WidgetCallChild};
     use crate::ast::ParseError;
     use crate::lexer::{Lexer, LexicalError};
+    use crate::spanned::Spanned;
 
     #[test]
     fn missing_name() {
         let (errs, ast) = test(r#"(defwindow :type "dock")"#);
 
-        assert_eq!(ast, Ok(TopLevelExpr::Err));
+        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 24).into()));
         assert_eq!(
             errs,
             vec![ParseError::ExpectedDefWindowName {
@@ -103,20 +104,24 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWindow::new(
-                Symbol::new("bar"),
-                Vec::<DefWindowArg>::new(),
-                Vec::<DefWindowContent>::new()
+            Ok((
+                0,
+                DefWindow::new(
+                    Symbol::new("bar"),
+                    Vec::<DefWindowArg>::new(),
+                    Vec::<DefWindowContent>::new()
+                )
+                .into(),
+                15
             )
-            .into())
+                .into())
         )
     }
 
     #[test]
     fn atom_args() {
         let (errs, ast) = test(
-            r#"
-            (defwindow top
+            r#"(defwindow top
                 :monitor 0
                 :windowtype "dock")"#,
         );
@@ -124,15 +129,20 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWindow::new(
-                "top",
-                vec![
-                    DefWindowArg::new("monitor", Atom::new_number("0")),
-                    DefWindowArg::new("windowtype", Atom::from("dock")),
-                ],
-                Vec::<DefWindowContent>::new()
+            Ok((
+                0,
+                DefWindow::new(
+                    "top",
+                    vec![
+                        DefWindowArg::new("monitor", Atom::new_number("0")),
+                        DefWindowArg::new("windowtype", Atom::from("dock")),
+                    ],
+                    Vec::<DefWindowContent>::new()
+                )
+                .into(),
+                77
             )
-            .into())
+                .into())
         );
     }
 
@@ -145,8 +155,7 @@ mod tests {
         // "#,
 
         let (errs, ast) = test(
-            r#"
-            (defwindow bar
+            r#"(defwindow bar
                 :geometry (geometry
                     :x "0%"
                     :y "0%"
@@ -158,25 +167,30 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWindow::new(
-                "bar",
-                vec![DefWindowArg::new(
-                    "geometry",
-                    WidgetCall::new(
+            Ok((
+                0,
+                DefWindow::new(
+                    "bar",
+                    vec![DefWindowArg::new(
                         "geometry",
-                        vec![
-                            WidgetCallArg::new("x", Atom::from("0%")),
-                            WidgetCallArg::new("y", Atom::from("0%")),
-                            WidgetCallArg::new("width", Atom::from("90%")),
-                            WidgetCallArg::new("height", Atom::from("10px")),
-                            WidgetCallArg::new("anchor", Atom::from("top center")),
-                        ],
-                        Vec::<WidgetCallChild>::new()
-                    )
-                )],
-                Vec::<DefWindowContent>::new()
+                        WidgetCall::new(
+                            "geometry",
+                            vec![
+                                WidgetCallArg::new("x", Atom::from("0%")),
+                                WidgetCallArg::new("y", Atom::from("0%")),
+                                WidgetCallArg::new("width", Atom::from("90%")),
+                                WidgetCallArg::new("height", Atom::from("10px")),
+                                WidgetCallArg::new("anchor", Atom::from("top center")),
+                            ],
+                            Vec::<WidgetCallChild>::new()
+                        )
+                    )],
+                    Vec::<DefWindowContent>::new()
+                )
+                .into(),
+                217
             )
-            .into())
+                .into())
         );
     }
 
@@ -187,20 +201,24 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWindow::new(
-                "frame",
-                Vec::<DefWindowArg>::new(),
-                vec![Atom::from("canvas")]
+            Ok((
+                0,
+                DefWindow::new(
+                    "frame",
+                    Vec::<DefWindowArg>::new(),
+                    vec![Atom::from("canvas")]
+                )
+                .into(),
+                26
             )
-            .into())
+                .into())
         );
     }
 
     #[test]
     fn widget_call_content() {
         let (errs, ast) = test(
-            r#"
-            (defwindow bar
+            r#"(defwindow bar
                 :geometry (geometry :anchor "top center")
                 (bar))"#,
         );
@@ -208,27 +226,32 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok(DefWindow::new(
-                Symbol::new("bar"),
-                vec![DefWindowArg::new(
-                    "geometry",
-                    WidgetCall::new(
+            Ok((
+                0,
+                DefWindow::new(
+                    Symbol::new("bar"),
+                    vec![DefWindowArg::new(
                         "geometry",
-                        vec![WidgetCallArg::new("anchor", Atom::from("top center"))],
-                        Vec::<WidgetCallChild>::new(),
-                    )
-                ),],
-                vec![WidgetCall::new(
-                    "bar",
-                    Vec::<WidgetCallArg>::new(),
-                    Vec::<WidgetCallChild>::new()
-                )],
+                        WidgetCall::new(
+                            "geometry",
+                            vec![WidgetCallArg::new("anchor", Atom::from("top center"))],
+                            Vec::<WidgetCallChild>::new(),
+                        )
+                    ),],
+                    vec![WidgetCall::new(
+                        "bar",
+                        Vec::<WidgetCallArg>::new(),
+                        Vec::<WidgetCallChild>::new()
+                    )],
+                )
+                .into(),
+                95
             )
-            .into())
+                .into())
         );
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<TopLevelExpr, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<TopLevelExpr>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

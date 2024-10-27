@@ -37,29 +37,16 @@ mod tests {
 
     #[test]
     fn single_whitespace() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
         for raw in [" ", "\n", "\r\n", "\t"] {
-            let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
-            assert_eq!(
-                peek_whitespace(&graphemes, 0, raw),
-                1,
-                "failed to consume '{}' as whitespace",
-                raw
-            );
+            assert_eq!(test(raw, 0), 1, "failed to consume '{}' as whitespace", raw);
         }
     }
 
     #[test]
     fn multiple_whitespaces() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
         for (raw, expected) in [("   ", 3), ("\t\t\t", 3), (" \r\n\t", 3)] {
-            let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
             assert_eq!(
-                peek_whitespace(&graphemes, 0, raw),
+                test(raw, 0),
                 expected,
                 "failed to consume '{}' as whitespace",
                 raw
@@ -69,21 +56,18 @@ mod tests {
 
     #[test]
     fn offsets_are_correctly_calculated_in_the_middle() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
-        let raw = "true   false";
-        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
-        assert_eq!(peek_whitespace(&graphemes, 4, raw), 3);
+        assert_eq!(test("true   false", 4), 3);
     }
 
     #[test]
     fn offsets_are_correctly_calculated_in_the_end() {
-        let _ = env_logger::builder().is_test(true).try_init();
+        assert_eq!(test("true  ", 4), 2);
+    }
 
-        let raw = "true  ";
+    fn test(raw: &str, idx: usize) -> usize {
+        let _ = env_logger::builder().is_test(true).try_init();
         let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
 
-        assert_eq!(peek_whitespace(&graphemes, 4, raw), 2);
+        peek_whitespace(&graphemes, idx, raw)
     }
 }

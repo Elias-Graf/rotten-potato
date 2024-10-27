@@ -50,16 +50,16 @@ impl<'inp> Iterator for Lexer<'inp> {
     type Item = LexerResult<'inp>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.curr_idx >= self.graphemes.len() {
-            log::debug!("reached end of grapheme vector, returning None");
-            return None;
-        }
-
         let consumed_whitespaces =
             matcher::peek_whitespace(&self.graphemes, self.curr_idx, self.raw);
         if consumed_whitespaces > 0 {
             log::debug!("skipped {} whitespace graphemes", consumed_whitespaces);
             self.curr_idx += consumed_whitespaces;
+        }
+
+        if self.curr_idx >= self.graphemes.len() {
+            log::debug!("reached end of grapheme vector, returning None");
+            return None;
         }
 
         type MatcherFn =
@@ -145,4 +145,24 @@ impl<'inp> From<matcher::PeekedToken<'inp>> for LexerResult<'inp> {
 
 pub fn grapheme_is_whitespace(grapheme: &Grapheme<'_>) -> bool {
     grapheme.1.chars().all(|c| c.is_whitespace())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trailing_whitespace() {
+        let _ = env_logger::builder().is_test(true).try_init();
+
+        let lexer = Lexer::new("()\n   ");
+
+        assert_eq!(
+            lexer.collect::<Vec<_>>(),
+            vec![
+                Ok((0, Tok::DelimiterLeftParen, 1)),
+                Ok((1, Tok::DelimiterRightParen, 2)),
+            ]
+        );
+    }
 }

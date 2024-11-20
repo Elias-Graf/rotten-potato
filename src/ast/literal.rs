@@ -1,13 +1,17 @@
+use crate::spanned::Spanned;
+
 use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Literal {
+    pub keyword: Spanned<()>,
     pub args: Vec<LiteralArg>,
 }
 
 impl Literal {
-    pub fn new(args: Vec<impl Into<LiteralArg>>) -> Self {
+    pub fn new(keyword: impl Into<Spanned<()>>, args: Vec<impl Into<LiteralArg>>) -> Self {
         Self {
+            keyword: keyword.into(),
             args: args.into_iter().map(|a| a.into()).collect(),
         }
     }
@@ -15,12 +19,12 @@ impl Literal {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct LiteralArg {
-    pub name: Symbol,
+    pub name: Spanned<Symbol>,
     pub value: LiteralArgValue,
 }
 
 impl LiteralArg {
-    pub fn new(name: impl Into<Symbol>, value: impl Into<LiteralArgValue>) -> Self {
+    pub fn new(name: impl Into<Spanned<Symbol>>, value: impl Into<LiteralArgValue>) -> Self {
         Self {
             name: name.into(),
             value: value.into(),
@@ -30,18 +34,18 @@ impl LiteralArg {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum LiteralArgValue {
-    String(String),
-    Symbol(Symbol),
+    String(Spanned<String>),
+    Symbol(Spanned<Symbol>),
 }
 
-impl From<String> for LiteralArgValue {
-    fn from(value: String) -> Self {
+impl From<Spanned<String>> for LiteralArgValue {
+    fn from(value: Spanned<String>) -> Self {
         Self::String(value)
     }
 }
 
-impl From<Symbol> for LiteralArgValue {
-    fn from(value: Symbol) -> Self {
+impl From<Spanned<Symbol>> for LiteralArgValue {
+    fn from(value: Spanned<Symbol>) -> Self {
         Self::Symbol(value)
     }
 }
@@ -66,10 +70,13 @@ mod tests {
             ast,
             Ok((
                 0,
-                Literal::new(vec![LiteralArg::new(
-                    "content",
-                    "(button 'foo')".to_owned()
-                )])
+                Literal::new(
+                    (1, 8),
+                    vec![LiteralArg::new(
+                        (10, "content".into(), 17),
+                        Spanned::from((18, "(button 'foo')".to_owned(), 34))
+                    )]
+                )
                 .into(),
                 35
             )
@@ -86,10 +93,13 @@ mod tests {
             ast,
             Ok((
                 0,
-                Literal::new(vec![LiteralArg::new(
-                    "content",
-                    Symbol::new("variable_containing_yuck")
-                )])
+                Literal::new(
+                    (1, 8),
+                    vec![LiteralArg::new(
+                        (10, "content".into(), 17),
+                        Spanned::from((18, Symbol::new("variable_containing_yuck"), 42))
+                    )]
+                )
                 .into(),
                 43
             )

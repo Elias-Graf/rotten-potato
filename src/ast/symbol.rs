@@ -21,6 +21,7 @@ mod tests {
     use crate::{
         ast::ParseError,
         lexer::{Lexer, LexicalError},
+        spanned::Spanned,
     };
 
     #[test]
@@ -29,11 +30,11 @@ mod tests {
             let (errs, ast) = test(input);
 
             assert_eq!(errs, Vec::new());
-            assert_eq!(ast, Ok(input.into()))
+            assert_eq!(ast, Ok((0, input.into(), input.len()).into()))
         }
     }
 
-    fn test(inp: &str) -> (Vec<ParseError>, Result<Symbol, LexicalError>) {
+    fn test(inp: &str) -> (Vec<ParseError>, Result<Spanned<Symbol>, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let lexer = Lexer::new(inp);

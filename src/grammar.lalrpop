@@ -47,7 +47,19 @@ pub TopLevelExpr: Spanned<TopLevelExpr> = {
 }
 
 pub DefListen: Spanned<TopLevelExpr> = {
-    <l:@L> "(" "deflisten" <name:Symbol?> <args:DefListenArg*> <script:"literalString"?> ")" <r:@R> => {
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "deflisten"
+    <r_kwd:@R>
+    <name:Symbol?>
+    <args:DefListenArg*>
+    <l_script:@L>
+    <script:"literalString"?>
+    <r_script:@R>
+    ")"
+    <r:@R>
+    => {
         let Some(name) = name else {
             errors.push(ParseError::ExpectedDefListenName { err_span: (l, r).into() });
             return (l, TopLevelExpr::Err, r).into();
@@ -57,7 +69,16 @@ pub DefListen: Spanned<TopLevelExpr> = {
             return (l, TopLevelExpr::Err, r).into();
         };
 
-        (l, DefListen::new(name, args, script.to_owned()).into(), r).into()
+        (
+            l,
+            DefListen::new(
+                (l_kwd, (), r_kwd),
+                name,
+                args,
+                (l_script, script.to_owned(), r_script)
+            ).into(),
+            r
+        ).into()
     },
 };
 
@@ -65,7 +86,19 @@ pub DefListenArg: DefListenArg =
     ":" <name:Symbol> <value:Atom> => DefListenArg::new(name, value);
 
 pub DefPoll: Spanned<TopLevelExpr> = {
-    <l:@L> "(" "defpoll" <name:Symbol?> <args:DefPollArg*> <script:"literalString"?> ")" <r:@R> => {
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "defpoll"
+    <r_kwd:@R>
+    <name:Symbol?>
+    <args:DefPollArg*>
+    <l_script:@L>
+    <script:"literalString"?>
+    <r_script:@R>
+    ")"
+    <r:@R>
+    => {
         let Some(name) = name else {
             errors.push(ParseError::ExpectedDefPollName {
                 err_span: (l, r).into(),
@@ -79,7 +112,17 @@ pub DefPoll: Spanned<TopLevelExpr> = {
             return (l, TopLevelExpr::Err, r).into();
         };
 
-        (l, DefPoll::new(name, args, script.to_owned()).into(), r).into()
+        (
+            l,
+            DefPoll::new(
+                (l_kwd, (), r_kwd),
+                name,
+                args,
+                (l_script, script.into(),
+                r_script),
+            ).into(),
+            r
+        ).into()
     },
 };
 
@@ -87,7 +130,7 @@ pub DefPollArg: DefPollArg =
     ":" <name:Symbol> <value:Atom> => DefPollArg::new(name, value);
 
 pub DefVar: Spanned<TopLevelExpr> = {
-    <l:@L> "(" "defvar" <name:Symbol?> <value:Atom?> ")" <r:@R> => {
+    <l:@L> "(" <l_kwd:@L> "defvar" <r_kwd:@R> <name:Symbol?> <value:Atom?> ")" <r:@R> => {
         let Some(name) = name else {
             errors.push(ParseError::ExpectedDefVarName {
                 err_span: (l, r).into(),
@@ -101,13 +144,21 @@ pub DefVar: Spanned<TopLevelExpr> = {
             return (l, TopLevelExpr::Err, r).into();
         };
 
-        (l, DefVar::new(name, value).into(), r).into()
+        (
+            l,
+            DefVar::new(
+                (l_kwd, (), r_kwd),
+                name,
+                value.map(Into::into)
+            ).into(),
+            r
+        ).into()
     },
 };
 
 pub DefWidget: Spanned<TopLevelExpr> = {
     <l:@L> "(" "defwidget" <name:Symbol?> ")" <r:@R> => {
-        let Some(name) = name else {
+        let Some(_) = name else {
             errors.push(ParseError::ExpectedDefWidgetName { err_span: (l, r).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
@@ -115,8 +166,29 @@ pub DefWidget: Spanned<TopLevelExpr> = {
         errors.push(ParseError::ExpectedDefWidgetParams { err_span: (l, r).into() });
         (l, TopLevelExpr::Err, r).into()
     },
-    <l:@L> "(" "defwidget" <name:Symbol> "[" <params:DefWidgetParam*> "]" <children:DefWidgetChild*> ")" <r:@R> => {
-        (l, DefWidget::new(name, params, children).into(), r).into()
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "defwidget"
+    <r_kwd:@R>
+    <name:Symbol>
+    "["
+    <params:DefWidgetParam*>
+    "]"
+    <children:DefWidgetChild*>
+    ")"
+    <r:@R>
+    => {
+        (
+            l,
+            DefWidget::new(
+                (l_kwd, (), r_kwd),
+                name,
+                params,
+                children
+            ).into(),
+            r
+        ).into()
     },
 };
 
@@ -127,20 +199,35 @@ pub DefWidgetChild: DefWidgetChild = WidgetCall => <>.into();
 pub DefWindow: Spanned<TopLevelExpr> = {
     <l:@L>
     "("
-        "defwindow"
-        <args:DefWindowArgs>
-        <content:DefWindowContentList>
+    "defwindow"
+    <args:DefWindowArgs>
+    <content:DefWindowContentList>
     ")"
-    <r:@R> => {
+    <r:@R>
+    => {
         errors.push(ParseError::ExpectedDefWindowName { err_span: (l, r).into() });
         (l, TopLevelExpr::Err, r).into()
     },
-    <l:@L> "("
-        "defwindow"
-        <name:Symbol>
-        <args:DefWindowArgs>
-        <content:DefWindowContentList>
-    ")" <r:@R> => (l, DefWindow::new(name, args, content).into(), r).into(),
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "defwindow"
+    <r_kwd:@R>
+    <name:Symbol>
+    <args:DefWindowArgs>
+    <content:DefWindowContentList>
+    ")"
+    <r:@R>
+    => (
+        l,
+        DefWindow::new(
+            (l_kwd, r_kwd),
+            name,
+            args,
+            content
+        ).into(),
+        r
+    ).into(),
 };
 
 pub DefWindowArgs: Vec<DefWindowArg> = <DefWindowArg*>;
@@ -156,40 +243,66 @@ pub DefWindowArgValue: DefWindowArgValue = {
 pub DefWindowContentList: Vec<DefWindowContent> = <DefWindowContent*>;
 
 pub DefWindowContent: DefWindowContent = {
-    Atom => DefWindowContent::Atom(<>),
-    WidgetCall => DefWindowContent::WidgetCall(<>),
+    Atom => <>.into(),
+    WidgetCall => <>.into(),
 };
 
 pub Include: Spanned<TopLevelExpr> = {
-    <l:@L> "(" "include" <path:"literalString"?> ")" <r:@R> => {
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "include"
+    <r_kwd:@R>
+    <l_path:@L>
+    <path:"literalString"?>
+    <r_path:@R>
+    ")"
+    <r:@R>
+    => {
         let Some(path) = path else {
             errors.push(ParseError::ExpectedIncludePath { err_span: (l, r).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
 
-        (l, Include::new(path).into(), r).into()
+        (
+            l,
+            Include::new((l_kwd, r_kwd), (l_path, path.into(), r_path)).into(),
+            r
+        ).into()
     }
 };
 
-pub Literal: Spanned<TopLevelExpr> = <l:@L> "(" "literal" <args:LiteralArg*> ")" <r:@R>
-    => (l, Literal::new(args).into(), r).into();
+pub Literal: Spanned<TopLevelExpr> =
+    <l:@L>
+    "("
+    <l_kwd:@L>
+    "literal"
+    <r_kwd:@R>
+    <args:LiteralArg*>
+    ")"
+    <r:@R>
+        => (
+            l,
+            Literal::new((l_kwd, r_kwd), args).into(),
+            r
+        ).into();
 
 pub LiteralArg: LiteralArg = {
-    ":" <name:Symbol> <value:"literalString"> => LiteralArg::new(name, value.to_owned()),
+    ":" <name:Symbol> <l_val:@L> <value:"literalString"> <r_val:@R>
+        => LiteralArg::new(name, Spanned::from((l_val, value.to_owned(), r_val))),
     ":" <name:Symbol> <value:Symbol> => LiteralArg::new(name, value),
 };
 
-pub WidgetCall: WidgetCall = {
+pub WidgetCall: Spanned<WidgetCall> = {
+    <l:@L>
     "("
-        <name:Symbol>
-        <args:WidgetCallArg*>
-        <children:WidgetCallChild*>
-    ")" => {
-        WidgetCall::new(
-            name,
-            args,
-            children,
-        )
+    <name:Symbol>
+    <args:WidgetCallArg*>
+    <children:WidgetCallChild*>
+    ")"
+    <r:@R>
+    => {
+        (l, WidgetCall::new(name, args, children), r).into()
     },
 };
 
@@ -258,24 +371,23 @@ pub MathOperation: Spanned<PrimitiveExpr> = {
 };
 
 pub UnaryOperation: Spanned<PrimitiveExpr> = {
-    "!" <Atom> => (0, UnaryOperation::new_not(<>).into(), 0).into(),
-    <l:@L> <a:Atom> <r:@R> => (l, a.into(), r).into(),
+    "!" <Atom> => (0, UnaryOperation::new_not(<>.1).into(), 0).into(),
+    <l:@L> <a:Atom> <r:@R> => (l, a.1.into(), r).into(),
     FunctionCall,
 };
 
-pub Atom: Atom = {
-    "false" => false.into(),
-    "true" => true.into(),
-    // Symbol => <>.into(),
-    "literalNumber" => Atom::new_number(<>.to_owned()),
-    "literalString" => Atom::StrLit(<>.to_owned()),
+pub Atom: Spanned<Atom> = {
+    <l:@L> "false" <r:@R> => (l, false.into(), r).into(),
+    <l:@L> "true" <r:@R> => (l, true.into(), r).into(),
+    <l:@L> <v:"literalNumber"> <r:@R> => (l, Atom::new_number(v.to_owned()), r).into(),
+    <l:@L> <v:"literalString"> <r:@R> => (l, Atom::StrLit(v.to_owned()), r).into(),
 };
 
 pub FunctionCall: Spanned<PrimitiveExpr> =
     <l:@L> <name:Symbol> "(" <args:CommaSeparated<TernaryOperation>> ")" <r:@R> =>
-        (l, FunctionCall::new(name, args).into(), r).into();
+        (l, FunctionCall::new(name.1, args).into(), r).into();
 
-pub Symbol: Symbol = "literalSymbol" => Symbol::new(<>);
+pub Symbol: Spanned<Symbol> = <l:@L> <s:"literalSymbol"> <r:@R> => (l, Symbol::new(s), r).into();
 
 CommaSeparated<T>: Vec<T> = {
     <mut v:(<T> ",")*> <e:T?> => match e {

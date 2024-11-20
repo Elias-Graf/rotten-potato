@@ -1,15 +1,23 @@
+use crate::spanned::Spanned;
+
 use super::atom::Atom;
 use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefVar {
-    pub name: Symbol,
+    pub keyword: Spanned<()>,
+    pub name: Spanned<Symbol>,
     pub value: DefVarValue,
 }
 
 impl DefVar {
-    pub fn new(name: impl Into<Symbol>, value: impl Into<DefVarValue>) -> Self {
+    pub fn new(
+        keyword: impl Into<Spanned<()>>,
+        name: impl Into<Spanned<Symbol>>,
+        value: impl Into<DefVarValue>,
+    ) -> Self {
         Self {
+            keyword: keyword.into(),
             name: name.into(),
             value: value.into(),
         }
@@ -18,11 +26,11 @@ impl DefVar {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum DefVarValue {
-    Atom(Atom),
+    Atom(Spanned<Atom>),
 }
 
-impl From<Atom> for DefVarValue {
-    fn from(value: Atom) -> Self {
+impl From<Spanned<Atom>> for DefVarValue {
+    fn from(value: Spanned<Atom>) -> Self {
         Self::Atom(value)
     }
 }
@@ -70,7 +78,17 @@ mod tests {
         assert_eq!(errs, Vec::<ParseError>::new(),);
         assert_eq!(
             ast,
-            Ok((0, DefVar::new("foo", Atom::from("some value")).into(), 25).into())
+            Ok((
+                0,
+                DefVar::new(
+                    (1, (), 7),
+                    (8, "foo".into(), 11),
+                    Spanned::from((12, Atom::from("some value").into(), 24))
+                )
+                .into(),
+                25
+            )
+                .into())
         );
     }
 

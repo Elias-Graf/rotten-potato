@@ -1,11 +1,17 @@
+use crate::spanned::Spanned;
+
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Include {
-    pub path: String,
+    pub keyword: Spanned<()>,
+    pub path: Spanned<String>,
 }
 
 impl Include {
-    pub fn new(path: impl Into<String>) -> Self {
-        Self { path: path.into() }
+    pub fn new(keyword: impl Into<Spanned<()>>, path: impl Into<Spanned<String>>) -> Self {
+        Self {
+            keyword: keyword.into(),
+            path: path.into(),
+        }
     }
 }
 
@@ -37,7 +43,15 @@ mod tests {
         let (errs, ast) = test(r#"(include "my_file.yuck")"#);
 
         assert_eq!(errs, Vec::new());
-        assert_eq!(ast, Ok((0, Include::new("my_file.yuck").into(), 24).into()));
+        assert_eq!(
+            ast,
+            Ok((
+                0,
+                Include::new((1, 8), (9, "my_file.yuck".into(), 23)).into(),
+                24
+            )
+                .into())
+        );
     }
 
     #[test]
@@ -47,7 +61,12 @@ mod tests {
         assert_eq!(errs, Vec::new());
         assert_eq!(
             ast,
-            Ok((0, Include::new("./path/to/my_file.yuck").into(), 34).into())
+            Ok((
+                0,
+                Include::new((1, 8), (9, "./path/to/my_file.yuck".into(), 33)).into(),
+                34
+            )
+                .into())
         );
     }
 

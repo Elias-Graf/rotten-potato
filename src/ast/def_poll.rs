@@ -1,31 +1,40 @@
+use crate::spanned::Spanned;
+
 use super::atom::Atom;
 use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefPoll {
-    pub name: Symbol,
+    pub keyword: Spanned<()>,
+    pub name: Spanned<Symbol>,
     pub args: Vec<DefPollArg>,
-    pub script: String,
+    pub script: Spanned<String>,
 }
 
 impl DefPoll {
-    pub fn new(name: impl Into<Symbol>, args: Vec<impl Into<DefPollArg>>, script: String) -> Self {
+    pub fn new(
+        keyword: impl Into<Spanned<()>>,
+        name: impl Into<Spanned<Symbol>>,
+        args: Vec<impl Into<DefPollArg>>,
+        script: impl Into<Spanned<String>>,
+    ) -> Self {
         Self {
+            keyword: keyword.into(),
             name: name.into(),
             args: args.into_iter().map(|a| a.into()).collect(),
-            script,
+            script: script.into(),
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefPollArg {
-    pub name: Symbol,
+    pub name: Spanned<Symbol>,
     pub value: DefPollArgValue,
 }
 
 impl DefPollArg {
-    pub fn new(name: impl Into<Symbol>, value: impl Into<DefPollArgValue>) -> Self {
+    pub fn new(name: impl Into<Spanned<Symbol>>, value: impl Into<DefPollArgValue>) -> Self {
         Self {
             name: name.into(),
             value: value.into(),
@@ -35,11 +44,11 @@ impl DefPollArg {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum DefPollArgValue {
-    Atom(Atom),
+    Atom(Spanned<Atom>),
 }
 
-impl From<Atom> for DefPollArgValue {
-    fn from(value: Atom) -> Self {
+impl From<Spanned<Atom>> for DefPollArgValue {
+    fn from(value: Spanned<Atom>) -> Self {
         Self::Atom(value)
     }
 }
@@ -104,12 +113,19 @@ mod tests {
             Ok((
                 0,
                 DefPoll::new(
-                    "time",
+                    (1, (), 8),
+                    (9, "time".into(), 13),
                     vec![
-                        DefPollArg::new("interval", Atom::from("1s")),
-                        DefPollArg::new("initial", Atom::from("initial-value"))
+                        DefPollArg::new(
+                            (15, "interval".into(), 23),
+                            Spanned::from((24, Atom::from("1s"), 28))
+                        ),
+                        DefPollArg::new(
+                            (46, "initial".into(), 53),
+                            Spanned::from((54, Atom::from("initial-value"), 69))
+                        )
                     ],
-                    "date +%H:%M:%S".to_owned(),
+                    (86, "date +%H:%M:%S".into(), 102),
                 )
                 .into(),
                 103

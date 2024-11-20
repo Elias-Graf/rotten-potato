@@ -1,34 +1,39 @@
+use crate::spanned::Spanned;
+
 use super::{atom::Atom, symbol::Symbol};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefListen {
-    pub name: Symbol,
+    pub keyword: Spanned<()>,
+    pub name: Spanned<Symbol>,
     pub args: Vec<DefListenArg>,
-    pub script: String,
+    pub script: Spanned<String>,
 }
 
 impl DefListen {
     pub fn new(
-        name: impl Into<Symbol>,
+        keyword: impl Into<Spanned<()>>,
+        name: impl Into<Spanned<Symbol>>,
         args: Vec<impl Into<DefListenArg>>,
-        script: String,
+        script: impl Into<Spanned<String>>,
     ) -> Self {
         Self {
+            keyword: keyword.into(),
             name: name.into(),
             args: args.into_iter().map(|a| a.into()).collect(),
-            script,
+            script: script.into(),
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefListenArg {
-    pub name: Symbol,
+    pub name: Spanned<Symbol>,
     pub value: DefListenArgValue,
 }
 
 impl DefListenArg {
-    pub fn new(name: impl Into<Symbol>, value: impl Into<DefListenArgValue>) -> Self {
+    pub fn new(name: impl Into<Spanned<Symbol>>, value: impl Into<DefListenArgValue>) -> Self {
         Self {
             name: name.into(),
             value: value.into(),
@@ -38,11 +43,11 @@ impl DefListenArg {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum DefListenArgValue {
-    Atom(Atom),
+    Atom(Spanned<Atom>),
 }
 
-impl From<Atom> for DefListenArgValue {
-    fn from(value: Atom) -> Self {
+impl From<Spanned<Atom>> for DefListenArgValue {
+    fn from(value: Spanned<Atom>) -> Self {
         Self::Atom(value)
     }
 }
@@ -101,9 +106,13 @@ mod tests {
             Ok((
                 0,
                 DefListen::new(
-                    "foo",
-                    vec![DefListenArg::new("initial", Atom::from("whatever"))],
-                    "tail -F /tmp/some_file".to_owned()
+                    (1, (), 10),
+                    (11, "foo".into(), 14),
+                    vec![DefListenArg::new(
+                        (16, "initial".into(), 23),
+                        Spanned::from((24, Atom::from("whatever"), 34))
+                    )],
+                    (51, "tail -F /tmp/some_file".into(), 75)
                 )
                 .into(),
                 76

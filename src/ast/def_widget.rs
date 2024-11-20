@@ -1,19 +1,24 @@
+use crate::spanned::Spanned;
+
 use super::{symbol::Symbol, widget_call::WidgetCall};
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefWidget {
-    pub name: Symbol,
+    pub keyword: Spanned<()>,
+    pub name: Spanned<Symbol>,
     pub params: Vec<DefWidgetParam>,
     pub children: Vec<DefWidgetChild>,
 }
 
 impl DefWidget {
     pub fn new(
-        name: impl Into<Symbol>,
+        keyword: impl Into<Spanned<()>>,
+        name: impl Into<Spanned<Symbol>>,
         params: Vec<impl Into<DefWidgetParam>>,
         children: Vec<impl Into<DefWidgetChild>>,
     ) -> Self {
         Self {
+            keyword: keyword.into(),
             name: name.into(),
             params: params.into_iter().map(|a| a.into()).collect(),
             children: children.into_iter().map(|a| a.into()).collect(),
@@ -23,12 +28,12 @@ impl DefWidget {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct DefWidgetParam {
-    pub name: Symbol,
+    pub name: Spanned<Symbol>,
     pub is_optional: bool,
 }
 
 impl DefWidgetParam {
-    pub fn new(name: impl Into<Symbol>, is_optional: bool) -> Self {
+    pub fn new(name: impl Into<Spanned<Symbol>>, is_optional: bool) -> Self {
         Self {
             name: name.into(),
             is_optional,
@@ -38,11 +43,11 @@ impl DefWidgetParam {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum DefWidgetChild {
-    WidgetCall(WidgetCall),
+    WidgetCall(Spanned<WidgetCall>),
 }
 
-impl From<WidgetCall> for DefWidgetChild {
-    fn from(value: WidgetCall) -> Self {
+impl From<Spanned<WidgetCall>> for DefWidgetChild {
+    fn from(value: Spanned<WidgetCall>) -> Self {
         Self::WidgetCall(value)
     }
 }
@@ -101,8 +106,9 @@ mod tests {
             Ok((
                 0,
                 DefWidget::new(
-                    "bar",
-                    vec![DefWidgetParam::new("name", false)],
+                    (1, (), 10),
+                    (11, "bar".into(), 14),
+                    vec![DefWidgetParam::new((16, "name".into(), 20), false)],
                     Vec::<DefWidgetChild>::new()
                 )
                 .into(),
@@ -122,8 +128,9 @@ mod tests {
             Ok((
                 0,
                 DefWidget::new(
-                    "bar",
-                    vec![DefWidgetParam::new("name", true)],
+                    (1, (), 10),
+                    (11, "bar".into(), 14),
+                    vec![DefWidgetParam::new((17, "name".into(), 21), true)],
                     Vec::<DefWidgetChild>::new()
                 )
                 .into(),
@@ -143,11 +150,12 @@ mod tests {
             Ok((
                 0,
                 DefWidget::new(
-                    "bar",
+                    (1, (), 10),
+                    (11, "bar".into(), 14),
                     vec![
-                        DefWidgetParam::new("foo", false),
-                        DefWidgetParam::new("name", true),
-                        DefWidgetParam::new("bar", false),
+                        DefWidgetParam::new((16, "foo".into(), 19), false),
+                        DefWidgetParam::new((21, "name".into(), 25), true),
+                        DefWidgetParam::new((26, "bar".into(), 29), false),
                     ],
                     Vec::<DefWidgetChild>::new()
                 )
@@ -175,32 +183,66 @@ mod tests {
             Ok((
                 0,
                 DefWidget::new(
-                    "bottombar",
-                    vec![DefWidgetParam::new("width", false)],
-                    vec![WidgetCall::new(
-                        "centerbox",
-                        vec![WidgetCallArg::new("orientation", Atom::from("h"))],
-                        vec![
-                            WidgetCall::new(
-                                "box",
-                                vec![
-                                    WidgetCallArg::new("halign", Atom::from("start")),
-                                    WidgetCallArg::new("orientation", Atom::from("h")),
-                                    WidgetCallArg::new("space-evenly", Atom::from(false))
-                                ],
-                                Vec::<WidgetCallChild>::new(),
-                            ),
-                            WidgetCall::new(
-                                "box",
-                                vec![
-                                    WidgetCallArg::new("halign", Atom::from("end")),
-                                    WidgetCallArg::new("orientation", Atom::from("h")),
-                                    WidgetCallArg::new("space-evenly", Atom::from(false))
-                                ],
-                                Vec::<WidgetCallChild>::new(),
-                            )
-                        ]
-                    )],
+                    (1, (), 10),
+                    (11, "bottombar".into(), 20),
+                    vec![DefWidgetParam::new((22, "width".into(), 27), false)],
+                    vec![Spanned::from((
+                        45,
+                        WidgetCall::new(
+                            (46, "centerbox".into(), 55),
+                            vec![WidgetCallArg::new(
+                                (57, "orientation".into(), 68),
+                                Spanned::from((69, Atom::from("h"), 72))
+                            )],
+                            vec![
+                                Spanned::from((
+                                    93,
+                                    WidgetCall::new(
+                                        (94, "box".into(), 97),
+                                        vec![
+                                            WidgetCallArg::new(
+                                                (99, "halign".into(), 105),
+                                                Spanned::from((106, Atom::from("start"), 113))
+                                            ),
+                                            WidgetCallArg::new(
+                                                (115, "orientation".into(), 126),
+                                                Spanned::from((127, Atom::from("h"), 130))
+                                            ),
+                                            WidgetCallArg::new(
+                                                (132, "space-evenly".into(), 144),
+                                                Spanned::from((145, Atom::from(false), 150))
+                                            )
+                                        ],
+                                        Vec::<WidgetCallChild>::new(),
+                                    ),
+                                    151
+                                )),
+                                Spanned::from((
+                                    172,
+                                    WidgetCall::new(
+                                        (173, "box".into(), 176),
+                                        vec![
+                                            WidgetCallArg::new(
+                                                (178, "halign".into(), 184),
+                                                Spanned::from((185, Atom::from("end"), 190))
+                                            ),
+                                            WidgetCallArg::new(
+                                                (192, "orientation".into(), 203),
+                                                Spanned::from((204, Atom::from("h"), 207))
+                                            ),
+                                            WidgetCallArg::new(
+                                                (209, "space-evenly".into(), 221),
+                                                Spanned::from((222, Atom::from(false), 227))
+                                            )
+                                        ],
+                                        Vec::<WidgetCallChild>::new(),
+                                    ),
+                                    228
+                                ))
+                            ]
+                        ),
+                        246
+                    ))],
                 )
                 .into(),
                 260

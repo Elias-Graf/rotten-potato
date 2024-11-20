@@ -216,7 +216,8 @@ mod tests {
                                         Vec::<WidgetCallChild>::new(),
                                     ),
                                     151
-                                )),
+                                ))
+                                .into(),
                                 Spanned::from((
                                     172,
                                     WidgetCall::new(
@@ -239,6 +240,7 @@ mod tests {
                                     ),
                                     228
                                 ))
+                                .into()
                             ]
                         ),
                         246

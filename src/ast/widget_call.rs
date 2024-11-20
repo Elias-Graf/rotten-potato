@@ -12,13 +12,13 @@ pub struct WidgetCall {
 impl WidgetCall {
     pub fn new(
         name: impl Into<Spanned<Symbol>>,
-        args: Vec<impl Into<WidgetCallArg>>,
-        children: Vec<impl Into<WidgetCallChild>>,
+        args: Vec<WidgetCallArg>,
+        children: Vec<WidgetCallChild>,
     ) -> Self {
         Self {
             name: name.into(),
-            args: args.into_iter().map(|a| a.into()).collect(),
-            children: children.into_iter().map(|c| c.into()).collect(),
+            args,
+            children,
         }
     }
 }
@@ -125,7 +125,7 @@ mod tests {
             Ok(WidgetCall::new(
                 (1, "labeled-container".into(), 18),
                 Vec::<WidgetCallArg>::new(),
-                vec![Spanned::from((19, Atom::from("content"), 28))]
+                vec![Spanned::from((19, Atom::from("content"), 28)).into()]
             ))
         );
     }
@@ -148,7 +148,8 @@ mod tests {
                         Vec::<WidgetCallChild>::new(),
                     ),
                     27
-                ))]
+                ))
+                .into()]
             ))
         );
     }
@@ -179,10 +180,11 @@ mod tests {
                             (69, "onclick".into(), 76),
                             Spanned::from((77, Atom::from("notify-send hey ho"), 97))
                         )],
-                        vec![Spanned::from((118, Atom::from("click me"), 128))],
+                        vec![Spanned::from((118, Atom::from("click me"), 128)).into()],
                     ),
                     129
-                ))],
+                ))
+                .into()],
             ))
         );
     }

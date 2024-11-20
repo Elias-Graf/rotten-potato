@@ -152,7 +152,7 @@ mod tests {
                     277,
                     DefWidget::new(
                         (278, (), 287),
-                        (288, "bar".into(), 291),
+                        (288, "baz".into(), 291),
                         Vec::<DefWidgetParam>::new(),
                         Vec::<DefWidgetChild>::new()
                     )
@@ -199,25 +199,49 @@ mod tests {
                                Spanned::from((420, Atom::from("dock"), 426)),
                             )
                         ],
-                        // TODO: Args, children
                         vec![
-                            Spanned::from((427, WidgetCall::new((428, "metric".into(), 434), Vec::<WidgetCallArg>::new(), Vec::<WidgetCallChild>::new()), 435)),
+                            Spanned::from((
+                                443,
+                                WidgetCall::new(
+                                    (444, "metric".into(), 450),
+                                    vec![
+                                        WidgetCallArg::new(
+                                            (452, "align".into(), 457),
+                                            Spanned::from((458, "center".into(), 466))
+                                        )
+                                    ],
+                                    vec![
+                                        Spanned::from((487, Atom::from("hey"), 492)).into(),
+                                        Spanned::from((
+                                            513,
+                                            WidgetCall::new(
+                                                (514, "sidestuff".into(), 523),
+                                                Vec::<WidgetCallArg>::new(),
+                                                Vec::<WidgetCallChild>::new(),
+                                            ),
+                                            524,
+                                        ))
+                                            .into()
+                                    ],
+                                ),
+                                525
+                            )),
                         ]
                     )
                     .into(),
-                    436
+                    526
                 )
                     .into(),
                 (
-                    449,
+                    539,
                     Literal::new(
-                        (450, 457),
+                        (540, 547),
                         vec![LiteralArg::new(
-                            (459, "content".into(), 466),
-                            Spanned::from((467, "(button 'click')".to_owned(), 485))
+                            (549, "content".into(), 556),
+                            Spanned::from((557, "(button 'click')".to_owned(), 575))
                     )])
                     .into(),
-                    486
+                    576
                 )
                     .into(),
             ])

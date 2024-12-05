@@ -44,6 +44,21 @@ pub TopLevelExpr: Spanned<TopLevelExpr> = {
     DefWindow,
     Include,
     Literal,
+    ! => {
+        match <>.error {
+            lalrpop_util::ParseError::InvalidToken { .. } => panic!("invalid token"),
+            lalrpop_util::ParseError::UnrecognizedEof { .. } => panic!("unrecognized eof"),
+            lalrpop_util::ParseError::UnrecognizedToken { token, expected } => {
+                let (l, _, r) = token;
+                errors.push(ParseError::UnexpectedToken {
+                    err_span: (l, r - l).into(),
+                });
+                (l, TopLevelExpr::Err, r).into()
+            },
+            lalrpop_util::ParseError::ExtraToken { .. } => panic!("extra token"),
+            lalrpop_util::ParseError::User { .. } => panic!("user"),
+        }
+    }
 }
 
 pub DefListen: Spanned<TopLevelExpr> = {

@@ -15,6 +15,7 @@ impl DefPoll {
     pub fn new(
         keyword: impl Into<Spanned<()>>,
         name: impl Into<Spanned<Symbol>>,
+        // TODO: Remove impl Into, don't think it's worth
         args: Vec<impl Into<DefPollArg>>,
         script: impl Into<Spanned<String>>,
     ) -> Self {

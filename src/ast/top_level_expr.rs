@@ -72,13 +72,82 @@ mod tests {
             include::Include,
             literal::{Literal, LiteralArg},
             widget_call::{WidgetCall, WidgetCallArg, WidgetCallChild},
+            ParseError,
         },
-        grammar, lexer,
+        grammar,
+        lexer::{self, LexicalError},
         spanned::Spanned,
     };
 
+    use super::*;
+
     #[test]
-    fn test() {
+    fn unexpected_token() {
+        let inp = r#"
+            (defvar foo "bar")
+            abc
+            (defpoll volume "scripts/getvol")
+        "#;
+
+        let (errors, ast) = test(inp);
+
+        assert_eq!(
+            errors,
+            vec![ParseError::UnexpectedToken {
+                err_span: (44, 3).into()
+            }]
+        );
+        assert_eq!(
+            ast,
+            Ok(vec![
+                (
+                    13,
+                    DefVar::new(
+                        (14, 20),
+                        (21, "foo".into(), 24),
+                        Spanned::from((25, Atom::from("bar"), 30))
+                    )
+                    .into(),
+                    31
+                )
+                    .into(),
+                (44, TopLevelExpr::Err, 47).into(),
+                (
+                    60,
+                    DefPoll::new(
+                        (61, 68),
+                        (69, "volume".into(), 75),
+                        Vec::<DefPollArg>::new(),
+                        (76, "scripts/getvol".to_owned(), 92)
+                    )
+                    .into(),
+                    93
+                )
+                    .into()
+            ])
+        );
+    }
+
+    fn test(
+        inp: &str,
+    ) -> (
+        Vec<ParseError>,
+        Result<Vec<Spanned<TopLevelExpr>>, LexicalError>,
+    ) {
+        let mut errs = Vec::new();
+        let lexer = lexer::Lexer::new(inp);
+        let ast = grammar::TopLevelParser::new()
+            .parse(&mut errs, lexer)
+            .map_err(|e| match e {
+                lalrpop_util::ParseError::User { error } => error,
+                e => unimplemented!("this error should not happen: {:?}", e),
+            });
+
+        (errs, ast)
+    }
+
+    #[test]
+    fn every_expr() {
         let _ = env_logger::builder().is_test(true).try_init();
 
         let inp = r#"

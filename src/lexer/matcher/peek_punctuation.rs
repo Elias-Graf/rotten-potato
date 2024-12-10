@@ -26,7 +26,7 @@ pub fn peek_punctuation<'inp>(
     };
 
     let span_from = grapheme.0;
-    let span_to = grapheme.1.len();
+    let span_to = grapheme.0 + grapheme.1.len();
     let spanned_tok = PeekedToken::new(tok, span_from, span_to, 1);
 
     log::trace!("successfully matched: {:?} as punctuation", spanned_tok);
@@ -59,5 +59,31 @@ mod tests {
                 expected
             );
         }
+    }
+
+    #[test]
+    fn offsets_are_correctly_calculated_in_middle() {
+        let _ = env_logger::builder().is_test(true).try_init();
+
+        let raw = "     :     ";
+        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
+
+        assert_eq!(
+            peek_punctuation(&graphemes, 5, raw),
+            Some(Ok(PeekedToken::new(Tok::PunctuationColon, 5, 6, 1))),
+        );
+    }
+
+    #[test]
+    fn offsets_are_correctly_calculated_at_end() {
+        let _ = env_logger::builder().is_test(true).try_init();
+
+        let raw = "     :";
+        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
+
+        assert_eq!(
+            peek_punctuation(&graphemes, 5, raw),
+            Some(Ok(PeekedToken::new(Tok::PunctuationColon, 5, 6, 1))),
+        );
     }
 }

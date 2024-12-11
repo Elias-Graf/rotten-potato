@@ -191,8 +191,8 @@ mod tests {
                         WidgetCall::new(
                             (46, "centerbox".into(), 55),
                             vec![WidgetCallArg::new(
-                                (57, "orientation".into(), 68),
-                                Spanned::from((69, Atom::from("h"), 72))
+                                Spanned(57, "orientation".into(), 68),
+                                Spanned(69, Atom::from("h"), 72)
                             )],
                             vec![
                                 Spanned::from((
@@ -201,16 +201,16 @@ mod tests {
                                         (94, "box".into(), 97),
                                         vec![
                                             WidgetCallArg::new(
-                                                (99, "halign".into(), 105),
-                                                Spanned::from((106, Atom::from("start"), 113))
+                                                Spanned(99, "halign".into(), 105),
+                                                Spanned(106, Atom::from("start"), 113)
                                             ),
                                             WidgetCallArg::new(
-                                                (115, "orientation".into(), 126),
-                                                Spanned::from((127, Atom::from("h"), 130))
+                                                Spanned(115, "orientation".into(), 126),
+                                                Spanned(127, Atom::from("h"), 130)
                                             ),
                                             WidgetCallArg::new(
-                                                (132, "space-evenly".into(), 144),
-                                                Spanned::from((145, Atom::from(false), 150))
+                                                Spanned(132, "space-evenly".into(), 144),
+                                                Spanned(145, Atom::from(false), 150)
                                             )
                                         ],
                                         Vec::<WidgetCallChild>::new(),
@@ -224,16 +224,16 @@ mod tests {
                                         (173, "box".into(), 176),
                                         vec![
                                             WidgetCallArg::new(
-                                                (178, "halign".into(), 184),
-                                                Spanned::from((185, Atom::from("end"), 190))
+                                                Spanned(178, "halign".into(), 184),
+                                                Spanned(185, Atom::from("end"), 190)
                                             ),
                                             WidgetCallArg::new(
-                                                (192, "orientation".into(), 203),
-                                                Spanned::from((204, Atom::from("h"), 207))
+                                                Spanned(192, "orientation".into(), 203),
+                                                Spanned(204, Atom::from("h"), 207)
                                             ),
                                             WidgetCallArg::new(
-                                                (209, "space-evenly".into(), 221),
-                                                Spanned::from((222, Atom::from(false), 227))
+                                                Spanned(209, "space-evenly".into(), 221),
+                                                Spanned(222, Atom::from(false), 227)
                                             )
                                         ],
                                         Vec::<WidgetCallChild>::new(),

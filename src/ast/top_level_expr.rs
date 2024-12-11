@@ -275,8 +275,8 @@ mod tests {
                                     (444, "metric".into(), 450),
                                     vec![
                                         WidgetCallArg::new(
-                                            (452, "align".into(), 457),
-                                            Spanned::from((458, "center".into(), 466))
+                                            Spanned(452, "align".into(), 457),
+                                            Spanned(458, "center".into(), 466)
                                         )
                                     ],
                                     vec![

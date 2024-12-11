@@ -193,24 +193,24 @@ mod tests {
                                 (42, "geometry".into(), 50),
                                 vec![
                                     WidgetCallArg::new(
-                                        (72, "x".into(), 73),
-                                        Spanned::from((74, Atom::from("0%"), 78))
+                                        Spanned(72, "x".into(), 73),
+                                        Spanned(74, Atom::from("0%"), 78)
                                     ),
                                     WidgetCallArg::new(
-                                        (100, "y".into(), 101),
-                                        Spanned::from((102, Atom::from("0%"), 106))
+                                        Spanned(100, "y".into(), 101),
+                                        Spanned(102, Atom::from("0%"), 106)
                                     ),
                                     WidgetCallArg::new(
-                                        (128, "width".into(), 133),
-                                        Spanned::from((134, Atom::from("90%"), 139))
+                                        Spanned(128, "width".into(), 133),
+                                        Spanned(134, Atom::from("90%"), 139)
                                     ),
                                     WidgetCallArg::new(
-                                        (161, "height".into(), 167),
-                                        Spanned::from((168, Atom::from("10px"), 174))
+                                        Spanned(161, "height".into(), 167),
+                                        Spanned(168, Atom::from("10px"), 174)
                                     ),
                                     WidgetCallArg::new(
-                                        (196, "anchor".into(), 202),
-                                        Spanned::from((203, Atom::from("top center"), 215))
+                                        Spanned(196, "anchor".into(), 202),
+                                        Spanned(203, Atom::from("top center"), 215)
                                     ),
                                 ],
                                 Vec::<WidgetCallChild>::new()
@@ -272,8 +272,8 @@ mod tests {
                             WidgetCall::new(
                                 (42, "geometry".into(), 50),
                                 vec![WidgetCallArg::new(
-                                    (52, "anchor".into(), 58),
-                                    Spanned::from((59, Atom::from("top center"), 71))
+                                    Spanned(52, "anchor".into(), 58),
+                                    Spanned(59, Atom::from("top center"), 71)
                                 )],
                                 Vec::<WidgetCallChild>::new(),
                             ),

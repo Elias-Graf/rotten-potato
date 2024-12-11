@@ -55,4 +55,19 @@ pub enum ParseError {
         #[label("try providing a path here")]
         err_span: SourceSpan,
     },
+    #[error("The argument is missing it's colon (':')")]
+    ExpectedArgColon {
+        #[label("add a colon here")]
+        err_span: SourceSpan,
+    },
+    #[error("The argument is missing it's name")]
+    ExpectedArgName {
+        #[label("please provide a name here")]
+        err_span: SourceSpan,
+    },
+    #[error("Expected the value of an argument")]
+    ExpectedArgValue {
+        #[label("try providing a value here")]
+        err_span: SourceSpan,
+    },
 }

@@ -25,12 +25,12 @@ impl WidgetCall {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct WidgetCallArg {
-    pub name: Spanned<Symbol>,
+    pub name: WidgetCallArgName,
     pub value: WidgetCallArgValue,
 }
 
 impl WidgetCallArg {
-    pub fn new(name: impl Into<Spanned<Symbol>>, value: impl Into<WidgetCallArgValue>) -> Self {
+    pub fn new(name: impl Into<WidgetCallArgName>, value: impl Into<WidgetCallArgValue>) -> Self {
         Self {
             name: name.into(),
             value: value.into(),
@@ -39,7 +39,20 @@ impl WidgetCallArg {
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub enum WidgetCallArgName {
+    Err,
+    Name(Spanned<Symbol>),
+}
+
+impl From<Spanned<Symbol>> for WidgetCallArgName {
+    fn from(value: Spanned<Symbol>) -> Self {
+        Self::Name(value)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum WidgetCallArgValue {
+    Err,
     Atom(Spanned<Atom>),
 }
 
@@ -102,11 +115,11 @@ mod tests {
                 (1, "labeled-container".into(), 18),
                 vec![
                     WidgetCallArg::new(
-                        (20, "x".into(), 21),
+                        Spanned(20, "x".into(), 21),
                         Spanned::from((22, Atom::new_number("0"), 23))
                     ),
                     WidgetCallArg::new(
-                        (25, "name".into(), 29),
+                        Spanned(25, "name".into(), 29),
                         Spanned::from((30, Atom::from("foo"), 35))
                     )
                 ],
@@ -169,7 +182,7 @@ mod tests {
             Ok(WidgetCall::new(
                 (14, "labeled-container".into(), 31),
                 vec![WidgetCallArg::new(
-                    (33, "name".into(), 37),
+                    Spanned(33, "name".into(), 37),
                     Spanned::from((38, Atom::from("foo"), 43))
                 )],
                 vec![Spanned::from((
@@ -177,7 +190,7 @@ mod tests {
                     WidgetCall::new(
                         (61, "button".into(), 67),
                         vec![WidgetCallArg::new(
-                            (69, "onclick".into(), 76),
+                            Spanned(69, "onclick".into(), 76),
                             Spanned::from((77, Atom::from("notify-send hey ho"), 97))
                         )],
                         vec![Spanned::from((118, Atom::from("click me"), 128)).into()],
@@ -189,12 +202,120 @@ mod tests {
         );
     }
 
-    // TODO: Missing closing parenthesis
-    // TODO: Missing opening parenthesis?
-    // TODO: Malformed arguments
-    //  - missing `:`
-    //  - missing name
-    //  - missing value
+    #[test]
+    fn arg_missing_colon() {
+        let (errs, ast) = test(r#"(widget name "foo")"#);
+
+        assert_eq!(
+            ast,
+            Ok(WidgetCall::new(
+                (1, "widget".into(), 7),
+                vec![WidgetCallArg::new(
+                    Spanned(8, "name".into(), 12),
+                    Spanned(13, "foo".into(), 18),
+                )],
+                Vec::new(),
+            ))
+        );
+        assert_eq!(
+            errs,
+            vec![ParseError::ExpectedArgColon {
+                err_span: (8, 1).into()
+            }]
+        );
+    }
+
+    #[test]
+    fn arg_missing_name() {
+        let (errs, ast) = test(r#"(widget : "foo")"#);
+
+        assert_eq!(
+            ast,
+            Ok(WidgetCall::new(
+                (1, "widget".into(), 7),
+                vec![WidgetCallArg::new(
+                    WidgetCallArgName::Err,
+                    Spanned(10, "foo".into(), 15),
+                )],
+                Vec::new(),
+            ))
+        );
+        assert_eq!(
+            errs,
+            vec![ParseError::ExpectedArgName {
+                err_span: (8, 1).into()
+            }]
+        );
+    }
+
+    #[test]
+    fn arg_missing_value() {
+        let (errs, ast) = test(r#"(widget :name)"#);
+
+        assert_eq!(
+            ast,
+            Ok(WidgetCall::new(
+                (1, "widget".into(), 7),
+                vec![WidgetCallArg::new(
+                    Spanned(9, "name".into(), 13),
+                    WidgetCallArgValue::Err,
+                )],
+                Vec::new(),
+            ))
+        );
+        assert_eq!(
+            errs,
+            vec![ParseError::ExpectedArgValue {
+                err_span: (13, 1).into()
+            }]
+        );
+    }
+
+    #[test]
+    fn arg_missing_value_in_middle() {
+        let (errs, ast) = test(r#"(widget :name :foo 1)"#);
+
+        assert_eq!(
+            ast,
+            Ok(WidgetCall::new(
+                (1, "widget".into(), 7),
+                vec![WidgetCallArg::new(
+                    Spanned(9, "name".into(), 13),
+                    WidgetCallArgValue::Err,
+                )],
+                Vec::new(),
+            ))
+        );
+        assert_eq!(
+            errs,
+            vec![ParseError::ExpectedArgValue {
+                err_span: (13, 1).into()
+            }]
+        );
+    }
+
+    // #[test]
+    // fn arg_missing_name_and_value() {
+    //     let (errs, ast) = test(r#"(widget : )"#);
+    //
+    //     assert_eq!(
+    //         ast,
+    //         Ok(WidgetCall::new(
+    //             (1, "widget".into(), 7),
+    //             vec![WidgetCallArg::new(
+    //                 WidgetCallArgName::Err,
+    //                 WidgetCallArgValue::Err,
+    //             )],
+    //             Vec::new(),
+    //         ))
+    //     );
+    //     assert_eq!(
+    //         errs,
+    //         vec![ParseError::ExpectedArgValue {
+    //             err_span: (13, 1).into()
+    //         }]
+    //     );
+    // }
 
     fn test(inp: &str) -> (Vec<ParseError>, Result<WidgetCall, LexicalError>) {
         let _ = env_logger::builder().is_test(true).try_init();

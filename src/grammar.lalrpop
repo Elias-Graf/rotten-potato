@@ -27,6 +27,8 @@ use crate::ast::top_level_expr::TopLevelExpr;
 use crate::ast::unary_operation::UnaryOperation;
 use crate::ast::widget_call::WidgetCall;
 use crate::ast::widget_call::WidgetCallArg;
+use crate::ast::widget_call::WidgetCallArgName;
+use crate::ast::widget_call::WidgetCallArgValue;
 use crate::ast::widget_call::WidgetCallChild;
 use crate::lexer::LexicalError;
 use crate::lexer::tok::Tok;
@@ -49,6 +51,7 @@ pub TopLevelExpr: Spanned<TopLevelExpr> = {
             lalrpop_util::ParseError::InvalidToken { .. } => panic!("invalid token"),
             lalrpop_util::ParseError::UnrecognizedEof { .. } => panic!("unrecognized eof"),
             lalrpop_util::ParseError::UnrecognizedToken { token, expected } => {
+                log::error!("{:?}", token);
                 let (l, _, r) = token;
                 errors.push(ParseError::UnexpectedToken {
                     err_span: (l, r - l).into(),
@@ -309,20 +312,39 @@ pub LiteralArg: LiteralArg = {
 };
 
 pub WidgetCall: Spanned<WidgetCall> = {
+    <l:@L> "(" <name:Symbol> <args:WidgetCallArg*> <children:WidgetCallChild*> ")" <r:@R> => {
+        (l, WidgetCall::new(name, args, children), r).into()
+    },
     <l:@L>
     "("
     <name:Symbol>
-    <args:WidgetCallArg*>
-    <children:WidgetCallChild*>
+    <mut args:WidgetCallArg*>
+    <arg_trail:WidgetCallArgMissingValue>
     ")"
-    <r:@R>
-    => {
-        (l, WidgetCall::new(name, args, children), r).into()
+    <r:@R> => {
+        args.push(arg_trail);
+        (l, WidgetCall::new(name, args, Vec::new()), r).into()
     },
 };
 
-pub WidgetCallArg: WidgetCallArg =
-    ":" <name:Symbol> <value:Atom> => WidgetCallArg::new(name, value);
+pub WidgetCallArg: WidgetCallArg = {
+    ":" <name:Symbol> <value:Atom> => WidgetCallArg::new(name, value),
+    <l:@L> ":" <value:Atom> => {
+        errors.push(ParseError::ExpectedArgName { err_span: (l, 1).into() });
+        WidgetCallArg::new(WidgetCallArgName::Err, value)
+    },
+    <l:@L> <name:Symbol> <value:Atom> => {
+        errors.push(ParseError::ExpectedArgColon { err_span: (l, 1).into() });
+        WidgetCallArg::new(name, value)
+    },
+};
+
+pub WidgetCallArgMissingValue: WidgetCallArg = {
+    ":" <name:Symbol> <l:@L> => {
+        errors.push(ParseError::ExpectedArgValue { err_span: (l, 1).into() });
+        WidgetCallArg::new(name, WidgetCallArgValue::Err)
+    },
+};
 
 pub WidgetCallChild: WidgetCallChild = {
     Atom => <>.into(),

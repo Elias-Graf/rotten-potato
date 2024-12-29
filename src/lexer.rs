@@ -86,6 +86,7 @@ impl<'inp> Iterator for Lexer<'inp> {
             for<'inp> fn(&[Grapheme<'inp>], usize, &'inp str) -> Option<matcher::PeekResult<'inp>>;
 
         const MATCHERS: &[(&str, MatcherFn)] = &[
+            ("comment", matcher::peek_comment),
             ("keyword", matcher::peek_keyword),
             ("delimiter", matcher::peek_delimiter),
             ("punctuation", matcher::peek_punctuation),

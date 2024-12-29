@@ -1,12 +1,15 @@
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
-use tok::Tok;
 use unicode_segmentation::UnicodeSegmentation;
 
 pub mod matcher;
 pub mod tok;
 
-#[derive(Clone, Debug, Error, Diagnostic, PartialEq, PartialOrd)]
+pub use tok::*;
+
+// TODO: Rework to struct containing shared properties and the variant.
+// After that, remove unnecessary methods in impl.
+#[derive(Clone, Debug, Error, Diagnostic, PartialEq, PartialOrd, Eq)]
 pub enum LexicalError<'inp> {
     #[error("Unrecognized token")]
     UnrecognizedToken {
@@ -25,6 +28,23 @@ pub enum LexicalError<'inp> {
     },
 }
 
+impl LexicalError<'_> {
+    pub fn src(&self) -> &str {
+        match self {
+            LexicalError::UnrecognizedToken { src, .. } => src,
+            LexicalError::UnterminatedLiteralString { src, .. } => src,
+        }
+    }
+
+    pub fn span(&self) -> &SourceSpan {
+        match self {
+            LexicalError::UnrecognizedToken { span, .. } => span,
+            LexicalError::UnterminatedLiteralString { span, .. } => span,
+        }
+    }
+}
+
+// TODO: What's the point of this? Can this just be removed?
 impl<'inp> From<lalrpop_util::ParseError<usize, Tok<'inp>, LexicalError<'inp>>>
     for LexicalError<'inp>
 {

@@ -1,6 +1,8 @@
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
+// TODO: Create struct with common properties.
+// Then remove workaround implementation
 #[derive(Clone, Error, Debug, Diagnostic, PartialEq)]
 pub enum ParseError {
     #[error("Token was not expected at this point")]
@@ -55,4 +57,22 @@ pub enum ParseError {
         #[label("try providing a path here")]
         err_span: SourceSpan,
     },
+}
+
+impl ParseError {
+    pub fn span(&self) -> &SourceSpan {
+        match self {
+            ParseError::UnexpectedToken { err_span } => err_span,
+            ParseError::ExpectedDefListenName { err_span } => err_span,
+            ParseError::ExpectedDefListenScript { err_span } => err_span,
+            ParseError::ExpectedDefPollName { err_span } => err_span,
+            ParseError::ExpectedDefPollScript { err_span } => err_span,
+            ParseError::ExpectedDefVarName { err_span } => err_span,
+            ParseError::ExpectedDefVarValue { err_span } => err_span,
+            ParseError::ExpectedDefWidgetName { err_span } => err_span,
+            ParseError::ExpectedDefWidgetParams { err_span } => err_span,
+            ParseError::ExpectedDefWindowName { err_span } => err_span,
+            ParseError::ExpectedIncludePath { err_span } => err_span,
+        }
+    }
 }

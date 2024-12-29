@@ -1,6 +1,6 @@
 use ast::{top_level_expr::TopLevelExpr, ParseError};
 use lalrpop_util::lalrpop_mod;
-use lexer::LexicalError;
+use lexer::{tok::Tok, LexicalError};
 use spanned::Spanned;
 
 pub mod ast;
@@ -12,15 +12,22 @@ lalrpop_mod!(
     pub grammar
 );
 
-/// Parses (a list of) top level expressions, for example a complete file.
-pub fn parse_top_level(
-    inp: &str,
-) -> Result<(Vec<Spanned<TopLevelExpr>>, Vec<ParseError>), LexicalError> {
-    let lexer = lexer::Lexer::new(inp);
+pub fn parse_top_level<'inp>(
+    tokens: Vec<(usize, Tok<'inp>, usize)>,
+) -> Result<(Vec<Spanned<TopLevelExpr>>, Vec<ParseError>), LexicalError<'inp>> {
     let parser = grammar::TopLevelParser::new();
     let mut errs = Vec::new();
 
-    let ast = parser.parse(&mut errs, lexer)?;
-
-    Ok((ast, errs))
+    match parser.parse(&mut errs, tokens) {
+        Ok(nodes) => Ok((nodes, errs)),
+        Err(err) => match err {
+            lalrpop_util::ParseError::User { error } => Err(error),
+            e => {
+                // LALRPOP should generally not fail, all the problems should be caught by the
+                // grammar and or processing.
+                log::error!("unexpected parsing error: {:?}", e);
+                Ok((Vec::new(), errs))
+            }
+        },
+    }
 }

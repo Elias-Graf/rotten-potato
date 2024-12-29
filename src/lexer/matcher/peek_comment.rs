@@ -51,14 +51,12 @@ mod tests {
 
     #[test]
     fn whole_line() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
-        let raw = "; This is a variable, which saves a name, very impotent comment
-             (defvar name 123)";
-        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
         assert_eq!(
-            peek_comment(&graphemes, 0, raw),
+            test(
+                "; This is a variable, which saves a name, very impotent comment
+             (defvar name 123)",
+                0
+            ),
             Some(Ok(PeekedToken::new(
                 Tok::Comment(" This is a variable, which saves a name, very impotent comment"),
                 0,
@@ -70,41 +68,37 @@ mod tests {
 
     #[test]
     fn end_of_line() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
-        let raw = "(foo) ; bar
-            (baz)";
-        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
         assert_eq!(
-            peek_comment(&graphemes, 6, raw),
+            test(
+                "(foo) ; bar
+            (baz)",
+                6
+            ),
             Some(Ok(PeekedToken::new(Tok::Comment(" bar"), 6, 11, 5)))
         );
     }
 
     #[test]
     fn end_of_input() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
-        let raw = "; bar";
-        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
         assert_eq!(
-            peek_comment(&graphemes, 0, raw),
+            test("; bar", 0),
             Some(Ok(PeekedToken::new(Tok::Comment(" bar"), 0, 5, 5)))
         );
     }
 
     #[test]
     fn end_of_line_empty_comment() {
-        let _ = env_logger::builder().is_test(true).try_init();
-
-        let raw = ";";
-        let graphemes: Vec<_> = raw.grapheme_indices(true).collect();
-
         assert_eq!(
-            peek_comment(&graphemes, 0, raw),
+            test(";", 0),
             Some(Ok(PeekedToken::new(Tok::Comment(""), 0, 1, 1)))
         );
+    }
+
+    fn test(inp: &str, idx: usize) -> Option<PeekResult<'_>> {
+        let _ = env_logger::builder().is_test(true).try_init();
+
+        let graphemes: Vec<_> = inp.grapheme_indices(true).collect();
+
+        peek_comment(&graphemes, idx, inp)
     }
 }

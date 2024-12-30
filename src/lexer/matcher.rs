@@ -1,5 +1,6 @@
 use super::{tok::Tok, LexicalError};
 
+mod peek_comment;
 mod peek_delimiter;
 mod peek_keyword;
 mod peek_literal_number;
@@ -11,6 +12,7 @@ mod peek_punctuation;
 mod peek_symbol;
 mod peek_whitespace;
 
+pub use peek_comment::*;
 pub use peek_delimiter::*;
 pub use peek_keyword::*;
 pub use peek_literal_number::*;

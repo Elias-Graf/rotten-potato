@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Tok<'inp> {
+    Comment(&'inp str),
     DelimiterComma,
     DelimiterLeftBracket,
     DelimiterLeftParen,

@@ -37,6 +37,7 @@ impl From<Spanned<Atom>> for DefVarValue {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -47,28 +48,60 @@ mod tests {
 
     #[test]
     fn missing_name() {
-        let (errs, ast) = test(r#"(defvar)"#);
+        let (errs, ast) = test(r#"   (defvar)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 8).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefVarName {
-                err_span: (0, 8).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    11,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefVarName {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 8,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]
     fn missing_value() {
-        let (errs, ast) = test(r#"(defvar foo)"#);
+        let (errs, ast) = test(r#"   (defvar foo)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 12).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefVarValue {
-                err_span: (0, 12).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    15,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefVarValue {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 12,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]

@@ -54,6 +54,7 @@ impl From<Spanned<WidgetCall>> for DefWidgetChild {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -72,28 +73,60 @@ mod tests {
     fn missing_name() {
         // TODO: Restuls in broken parser
         // r#"(defwidget [])"#
-        let (errs, ast) = test(r#"(defwidget)"#);
+        let (errs, ast) = test(r#"   (defwidget)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 11).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefWidgetName {
-                err_span: (0, 11).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    14,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefWidgetName {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 11,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]
     fn missing_params() {
-        let (errs, ast) = test(r#"(defwidget bar)"#);
+        let (errs, ast) = test(r#"   (defwidget bar)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 15).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefWidgetParams {
-                err_span: (0, 15).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    18,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefWidgetParams {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 15,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]

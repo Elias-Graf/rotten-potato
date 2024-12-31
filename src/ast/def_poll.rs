@@ -56,6 +56,7 @@ impl From<Spanned<Atom>> for DefPollArgValue {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -71,28 +72,60 @@ mod tests {
 
     #[test]
     pub fn missing_name() {
-        let (errs, ast) = test(r#"(defpoll)"#);
+        let (errs, ast) = test(r#"   (defpoll)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 9).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefPollName {
-                err_span: (0, 9).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    12,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefPollName {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 9,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]
     pub fn missing_script() {
-        let (errs, ast) = test(r#"(defpoll time)"#);
+        let (errs, ast) = test(r#"   (defpoll time)    "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 14).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefPollScript {
-                err_span: (0, 14).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    17,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefPollScript {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 14,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]

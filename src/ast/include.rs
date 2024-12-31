@@ -17,6 +17,7 @@ impl Include {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -27,15 +28,31 @@ mod tests {
 
     #[test]
     pub fn missing_path() {
-        let (errs, ast) = test(r#"(include)"#);
+        let (errs, ast) = test(r#"   (include)   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 9).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedIncludePath {
-                err_span: (0, 9).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    12,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedIncludePath {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 9,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]

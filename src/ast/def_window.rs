@@ -80,6 +80,7 @@ impl From<Spanned<WidgetCall>> for DefWindowContent {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
     use pretty_assertions::assert_eq;
 
     use super::*;
@@ -91,15 +92,31 @@ mod tests {
 
     #[test]
     fn missing_name() {
-        let (errs, ast) = test(r#"(defwindow :type "dock")"#);
+        let (errs, ast) = test(r#"   (defwindow :type "dock")   "#);
 
-        assert_eq!(ast, Ok((0, TopLevelExpr::Err, 24).into()));
-        assert_eq!(
-            errs,
-            vec![ParseError::ExpectedDefWindowName {
-                err_span: (0, 24).into()
-            }]
-        );
+        expect![[r#"
+            Ok(
+                Spanned(
+                    3,
+                    Err,
+                    27,
+                ),
+            )
+        "#]]
+        .assert_debug_eq(&ast);
+        expect![[r#"
+            [
+                ExpectedDefWindowName {
+                    err_span: SourceSpan {
+                        offset: SourceOffset(
+                            3,
+                        ),
+                        length: 24,
+                    },
+                },
+            ]
+        "#]]
+        .assert_debug_eq(&errs);
     }
 
     #[test]

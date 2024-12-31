@@ -76,11 +76,11 @@ pub DefListen: Spanned<TopLevelExpr> = {
     <r:@R>
     => {
         let Some(name) = name else {
-            errors.push(ParseError::ExpectedDefListenName { err_span: (l, r).into() });
+            errors.push(ParseError::ExpectedDefListenName { err_span: (l, r - l).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
         let Some(script) = script else {
-            errors.push(ParseError::ExpectedDefListenScript { err_span: (l, r).into() });
+            errors.push(ParseError::ExpectedDefListenScript { err_span: (l, r - l).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
 
@@ -116,13 +116,13 @@ pub DefPoll: Spanned<TopLevelExpr> = {
     => {
         let Some(name) = name else {
             errors.push(ParseError::ExpectedDefPollName {
-                err_span: (l, r).into(),
+                err_span: (l, r - l).into(),
             });
             return (l, TopLevelExpr::Err, r).into();
         };
         let Some(script) = script else {
             errors.push(ParseError::ExpectedDefPollScript {
-                err_span: (l, r).into(),
+                err_span: (l, r - l).into(),
             });
             return (l, TopLevelExpr::Err, r).into();
         };
@@ -148,13 +148,13 @@ pub DefVar: Spanned<TopLevelExpr> = {
     <l:@L> "(" <l_kwd:@L> "defvar" <r_kwd:@R> <name:Symbol?> <value:Atom?> ")" <r:@R> => {
         let Some(name) = name else {
             errors.push(ParseError::ExpectedDefVarName {
-                err_span: (l, r).into(),
+                err_span: (l, r - l).into(),
             });
             return (l, TopLevelExpr::Err, r).into();
         };
         let Some(value) = value else {
             errors.push(ParseError::ExpectedDefVarValue {
-                err_span: (l, r).into(),
+                err_span: (l, r - l).into(),
             });
             return (l, TopLevelExpr::Err, r).into();
         };
@@ -174,11 +174,11 @@ pub DefVar: Spanned<TopLevelExpr> = {
 pub DefWidget: Spanned<TopLevelExpr> = {
     <l:@L> "(" "defwidget" <name:Symbol?> ")" <r:@R> => {
         let Some(_) = name else {
-            errors.push(ParseError::ExpectedDefWidgetName { err_span: (l, r).into() });
+            errors.push(ParseError::ExpectedDefWidgetName { err_span: (l, r - l).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
 
-        errors.push(ParseError::ExpectedDefWidgetParams { err_span: (l, r).into() });
+        errors.push(ParseError::ExpectedDefWidgetParams { err_span: (l, r - l).into() });
         (l, TopLevelExpr::Err, r).into()
     },
     <l:@L>
@@ -220,7 +220,7 @@ pub DefWindow: Spanned<TopLevelExpr> = {
     ")"
     <r:@R>
     => {
-        errors.push(ParseError::ExpectedDefWindowName { err_span: (l, r).into() });
+        errors.push(ParseError::ExpectedDefWindowName { err_span: (l, r - l).into() });
         (l, TopLevelExpr::Err, r).into()
     },
     <l:@L>
@@ -275,7 +275,7 @@ pub Include: Spanned<TopLevelExpr> = {
     <r:@R>
     => {
         let Some(path) = path else {
-            errors.push(ParseError::ExpectedIncludePath { err_span: (l, r).into() });
+            errors.push(ParseError::ExpectedIncludePath { err_span: (l, r - l).into() });
             return (l, TopLevelExpr::Err, r).into();
         };
 
